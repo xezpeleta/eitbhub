@@ -1,5 +1,5 @@
 {
-  "export_date": "2026-01-04T23:55:09.493734",
+  "export_date": "2026-01-05T00:15:42.338956",
   "count": 1503,
   "content": [
     {
@@ -23726,17 +23726,19 @@
     {
       "slug": "izaro-gabonetan",
       "title": "Izaro Gabonetan",
-      "type": "unknown",
+      "type": "vod",
       "series_title": null,
       "season_number": null,
       "episode_number": null,
-      "last_checked": "2026-01-04T20:24:25.501571",
-      "description": null,
-      "thumbnail": null,
-      "age_rating": null,
-      "access_restriction": null,
-      "available_until": null,
-      "languages": [],
+      "last_checked": "2026-01-05T00:09:06.057931",
+      "description": "Orioko Mutiozabal Txoren ontziolan grabatutako Izaro abeslariaren emanaldia \"Izaro Gabonetan\" diskoko kantekin.",
+      "thumbnail": "https://cdnstorage.primeran.eus/directus/eitb/ecc03b6d-093e-42cc-bfc5-ddcd94d7c9e2.jpg",
+      "age_rating": "D",
+      "access_restriction": "registration_required",
+      "available_until": "2029-12-25T22:58:00+00:00",
+      "languages": [
+        "eu"
+      ],
       "content_url": "https://primeran.eus/m/izaro-gabonetan"
     },
     {
