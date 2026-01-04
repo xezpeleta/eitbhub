@@ -58,12 +58,13 @@ function createCharts() {
                         statistics.unknown_count
                     ],
                     backgroundColor: [
-                        '#27ae60',
-                        '#e74c3c',
-                        '#95a5a6'
+                        '#00D7B6',  // Primary teal for accessible
+                        '#FF6B6B',  // Softer coral-red for restricted
+                        '#95a5a6'   // Grey for unknown
                     ],
                     borderWidth: 2,
-                    borderColor: '#fff'
+                    borderColor: '#fff',
+                    hoverOffset: 4
                 }]
             },
             options: {
