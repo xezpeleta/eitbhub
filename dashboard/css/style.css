@@ -260,6 +260,18 @@ td {
     border-bottom: 1px solid var(--border-color);
 }
 
+/* Hide Type column */
+th[data-sort="type"],
+td:nth-child(4) {
+    display: none;
+}
+
+/* Hide Restriction Type column */
+th[data-sort="restriction_type"],
+td:nth-child(10) {
+    display: none;
+}
+
 tbody tr:hover {
     background: var(--bg-color);
 }
@@ -285,6 +297,146 @@ tbody tr:hover {
 .status-unknown {
     background: #f5f5f5;
     color: var(--unknown-color);
+}
+
+/* Series and Episode Rows */
+.series-row {
+    background: #f8f9fa;
+    font-weight: 600;
+}
+
+.series-row:hover {
+    background: #e9ecef;
+}
+
+.episode-row {
+    background: #fafafa;
+}
+
+.episode-row:hover {
+    background: #f0f0f0;
+}
+
+.series-episode-count {
+    font-size: 0.85rem;
+    font-weight: normal;
+    color: var(--secondary-color);
+}
+
+/* Expand/Collapse Toggle */
+.expand-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--text-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: background 0.2s;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.expand-toggle:hover {
+    background: var(--border-color);
+}
+
+.expand-toggle:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Thumbnail Cell */
+.thumbnail-cell {
+    text-align: center;
+    padding: 0.5rem !important;
+}
+
+.thumbnail-img {
+    width: 60px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.thumbnail-img:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Age Rating Badge */
+.age-rating-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: #FFC23B;
+    color: #000;
+}
+
+/* Language Badge */
+.language-badge {
+    display: inline-block;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: var(--primary-color);
+    color: white;
+    margin-right: 0.25rem;
+}
+
+/* Content Link */
+.content-link {
+    color: var(--text-color);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.content-link:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.external-link-icon {
+    font-size: 0.75rem;
+    opacity: 0.6;
+}
+
+.content-title-tooltip {
+    cursor: help;
+    border-bottom: 1px dotted var(--secondary-color);
+}
+
+/* Tooltip Styles */
+[title] {
+    position: relative;
+}
+
+/* Description tooltip enhancement */
+.content-title-tooltip:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    white-space: normal;
+    max-width: 300px;
+    z-index: 1000;
+    margin-top: 0.25rem;
+    pointer-events: none;
 }
 
 .loading {
@@ -335,5 +487,26 @@ footer a:hover {
     
     th, td {
         padding: 0.5rem;
+    }
+    
+    /* Hide thumbnail column on mobile */
+    .thumbnail-cell {
+        display: none;
+    }
+    
+    th:nth-child(2) {
+        display: none;
+    }
+    
+    /* Adjust episode indentation on mobile */
+    .episode-row {
+        padding-left: 1rem !important;
+    }
+    
+    /* Stack language badges vertically on mobile */
+    .language-badge {
+        display: block;
+        margin-bottom: 0.25rem;
+        margin-right: 0;
     }
 }

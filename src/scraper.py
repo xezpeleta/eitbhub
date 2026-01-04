@@ -228,7 +228,7 @@ class ContentScraper:
             
             if response.status_code == 403:
                 # Geo-restricted at API level
-                print(f"    🚫 {slug}: Geo-restricted at API level")
+                print(f"    🚫 {slug}: Geo-restricted at API level (403)")
                 try:
                     error_data = response.json()
                     error_msg = error_data.get('message', 'Geo-restricted')
@@ -250,6 +250,39 @@ class ContentScraper:
                 self.db.add_check_history(slug, {
                     'is_geo_restricted': True,
                     'status_code': 403,
+                    'error': error_msg
+                })
+                
+                # Update stats
+                self.stats['total_checked'] += 1
+                self.stats['geo_restricted'] += 1
+                
+                return content_data
+            
+            if response.status_code == 500:
+                # Server error - often indicates geo-restriction when accessing from restricted regions
+                print(f"    🚫 {slug}: Server error (500) - likely geo-restricted")
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('message', 'Server error - likely geo-restricted')
+                except:
+                    error_msg = response.text[:200] if response.text else 'Server error - likely geo-restricted'
+                
+                # Create content data with limited info
+                content_data = {
+                    'slug': slug,
+                    'title': slug.replace('-', ' ').title(),  # Best guess from slug
+                    'type': 'unknown',
+                    'is_geo_restricted': True,
+                    'restriction_type': 'api_500',
+                    'metadata': {'error': error_msg, 'api_restricted': True, 'status_code': 500}
+                }
+                
+                # Save to database
+                self.db.upsert_content(content_data)
+                self.db.add_check_history(slug, {
+                    'is_geo_restricted': True,
+                    'status_code': 500,
                     'error': error_msg
                 })
                 
@@ -299,7 +332,11 @@ class ContentScraper:
                 return None
             elif e.response.status_code == 403:
                 # Already handled above, but just in case
-                print(f"    🚫 {slug}: Geo-restricted")
+                print(f"    🚫 {slug}: Geo-restricted (403)")
+                return None
+            elif e.response.status_code == 500:
+                # Already handled above, but just in case
+                print(f"    🚫 {slug}: Geo-restricted (500)")
                 return None
             else:
                 print(f"    ✗ Error checking {slug}: {e}")
@@ -340,6 +377,17 @@ class ContentScraper:
                 print(f"    Checking episode: {episode_slug}")
                 
                 try:
+                    # Try to get full episode metadata (includes images, description, etc.)
+                    episode_metadata = episode  # Default to transformed episode data
+                    try:
+                        full_episode_data = self.api.get_media(episode_slug)
+                        self._sleep()
+                        # Use full metadata if available
+                        episode_metadata = full_episode_data
+                    except Exception as e:
+                        # If get_media fails (404, 403, etc.), use the transformed episode data
+                        print(f"      Could not fetch full metadata for {episode_slug}: {e}")
+                    
                     # Check geo-restriction for this episode
                     geo_check = self.api.check_geo_restriction(episode_slug)
                     self._sleep()
@@ -347,16 +395,18 @@ class ContentScraper:
                     # Prepare content data
                     content_data = {
                         'slug': episode_slug,
-                        'title': episode.get('episode_title'),
+                        'title': episode_metadata.get('title') or episode.get('episode_title'),
                         'type': 'episode',
-                        'duration': episode.get('duration'),
+                        'duration': episode_metadata.get('duration') or episode.get('duration'),
+                        'year': episode_metadata.get('production_year') or episode_metadata.get('year'),
+                        'genres': [g.get('name') for g in episode_metadata.get('genres', [])],
                         'series_slug': series_slug,
                         'series_title': episode.get('series_title'),
                         'season_number': episode.get('season_number'),
                         'episode_number': episode.get('episode_number'),
                         'is_geo_restricted': geo_check.get('is_geo_restricted'),
                         'restriction_type': f"manifest_{geo_check.get('status_code')}",
-                        'metadata': episode
+                        'metadata': episode_metadata
                     }
                     
                     # Save to database

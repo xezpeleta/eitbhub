@@ -145,6 +145,10 @@ class PrimeranAPI:
             elif status_code == 403:
                 result['is_geo_restricted'] = True
                 result['error'] = 'Forbidden - Geo-restricted'
+            elif status_code == 500:
+                # Server error - often indicates geo-restriction when accessing from restricted regions
+                result['is_geo_restricted'] = True
+                result['error'] = 'Server error (500) - likely geo-restricted'
             elif status_code == 404:
                 result['is_geo_restricted'] = None
                 result['error'] = 'Not found - Content may not exist'
@@ -190,6 +194,22 @@ class PrimeranAPI:
                     'season_number': season_number,
                     'type': 'episode'
                 }
+                
+                # Include images if available in the episode data
+                if 'images' in episode and isinstance(episode['images'], list) and len(episode['images']) > 0:
+                    episode_info['images'] = episode['images']
+                
+                # Include description if available
+                if 'description' in episode:
+                    episode_info['description'] = episode.get('description')
+                
+                # Include other metadata that might be in the episode object
+                if 'age_rating' in episode:
+                    episode_info['age_rating'] = episode.get('age_rating')
+                
+                if 'access_restriction' in episode:
+                    episode_info['access_restriction'] = episode.get('access_restriction')
+                
                 episodes.append(episode_info)
         
         return episodes

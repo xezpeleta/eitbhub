@@ -36,6 +36,18 @@
                 </select>
             </div>
             <div class="filter-group">
+                <label for="age-rating-filter">Age Rating:</label>
+                <select id="age-rating-filter">
+                    <option value="">All Ratings</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="language-filter">Language:</label>
+                <select id="language-filter">
+                    <option value="">All Languages</option>
+                </select>
+            </div>
+            <div class="filter-group">
                 <button id="clear-filters">Clear Filters</button>
             </div>
         </section>
@@ -48,9 +60,12 @@
                 <table id="content-table">
                     <thead>
                         <tr>
+                            <th style="width: 40px;"></th>
+                            <th style="width: 80px;">Thumbnail</th>
                             <th data-sort="title">Title <span class="sort-indicator"></span></th>
                             <th data-sort="type">Type <span class="sort-indicator"></span></th>
-                            <th data-sort="series_title">Series <span class="sort-indicator"></span></th>
+                            <th>Age</th>
+                            <th>Languages</th>
                             <th data-sort="duration">Duration <span class="sort-indicator"></span></th>
                             <th data-sort="year">Year <span class="sort-indicator"></span></th>
                             <th data-sort="is_geo_restricted">Geo-Restricted <span class="sort-indicator"></span></th>
@@ -59,7 +74,7 @@
                     </thead>
                     <tbody id="content-tbody">
                         <tr>
-                            <td colspan="7" class="loading">Loading content...</td>
+                            <td colspan="10" class="loading">Loading content...</td>
                         </tr>
                     </tbody>
                 </table>
