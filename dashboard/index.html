@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Primeran Geo-Restriction Checker - Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Primeran.eus Geo-Restriction Checker</h1>
+            <p class="subtitle">Tracking geo-restricted content on Primeran.eus</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="stats-overview" id="stats-overview">
+            <div class="stat-card">
+                <div class="stat-value" id="total-content">-</div>
+                <div class="stat-label">Total Content</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="geo-restricted">-</div>
+                <div class="stat-label">Geo-Restricted</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="accessible">-</div>
+                <div class="stat-label">Accessible</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="restriction-percentage">-</div>
+                <div class="stat-label">Restriction Rate</div>
+            </div>
+        </section>
+
+        <section class="charts-section">
+            <div class="chart-container">
+                <h2>Geo-Restriction Status</h2>
+                <canvas id="status-chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Content by Type</h2>
+                <canvas id="type-chart"></canvas>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <div class="info-card">
+                <h3>About This Project</h3>
+                <p>
+                    This dashboard tracks geo-restricted content on Primeran.eus, a Basque streaming platform.
+                    Content is checked by attempting to access video manifests - if access is denied (403 Forbidden),
+                    the content is marked as geo-restricted.
+                </p>
+                <p>
+                    <strong>Last Updated:</strong> <span id="last-updated">-</span>
+                </p>
+            </div>
+            <div class="info-card">
+                <h3>Navigation</h3>
+                <ul>
+                    <li><a href="content.html">View Full Content List</a></li>
+                    <li><a href="https://github.com/xezpeleta/eitbren-mugak">View on GitHub</a></li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Primeran Geo-Restriction Checker | 
+               <a href="https://github.com/xezpeleta/eitbren-mugak">Source Code</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
