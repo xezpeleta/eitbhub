@@ -3,73 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Primeran Content List - Geo-Restriction Checker</title>
+    <title>Primeran.eus edukia</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <header>
         <div class="container">
-            <h1>Primeran.eus Content List</h1>
-            <p class="subtitle">All content with geo-restriction status</p>
+            <h1>Primeran.eus Edukia</h1>
+            <p class="subtitle">EITBko edukiaren geo-murrizketa analisia</p>
         </div>
     </header>
 
     <main class="container">
         <section class="filters-section">
             <div class="filter-group">
-                <label for="search-input">Search:</label>
+                <label for="search-input">Bilatu:</label>
                 <input type="text" id="search-input" placeholder="Search by title...">
             </div>
             <div class="filter-group">
-                <label for="type-filter">Type:</label>
+                <label for="type-filter">Mota:</label>
                 <select id="type-filter">
-                    <option value="">All Types</option>
+                    <option value="">Guztia</option>
                 </select>
             </div>
             <div class="filter-group">
-                <label for="restriction-filter">Geo-Restriction:</label>
+                <label for="restriction-filter">Geo-Murrizketa:</label>
                 <select id="restriction-filter">
-                    <option value="">All</option>
-                    <option value="true">Restricted</option>
-                    <option value="false">Accessible</option>
-                    <option value="null">Unknown</option>
+                    <option value="">Guztia</option>
+                    <option value="true">Murriztua</option>
+                    <option value="false">Murriztu gabea</option>
+                    <option value="null">Ezezaguna</option>
                 </select>
             </div>
             <div class="filter-group">
-                <label for="age-rating-filter">Age Rating:</label>
+                <label for="age-rating-filter">Adina:</label>
                 <select id="age-rating-filter">
-                    <option value="">All Ratings</option>
+                    <option value="">Guztia</option>
                 </select>
             </div>
             <div class="filter-group">
-                <label for="language-filter">Language:</label>
+                <label for="language-filter">Hizkuntza:</label>
                 <select id="language-filter">
-                    <option value="">All Languages</option>
+                    <option value="">Guztiak</option>
                 </select>
             </div>
             <div class="filter-group">
-                <button id="clear-filters">Clear Filters</button>
+                <button id="clear-filters">Ezabatu filtroak</button>
             </div>
         </section>
 
         <section class="table-section">
             <div class="table-info">
-                <span id="results-count">0</span> items found
+                Aurkitutako <span id="results-count">0</span> eduki
             </div>
             <div class="table-wrapper">
                 <table id="content-table">
                     <thead>
                         <tr>
                             <th style="width: 40px;"></th>
-                            <th style="width: 80px;">Thumbnail</th>
-                            <th data-sort="title">Title <span class="sort-indicator"></span></th>
-                            <th data-sort="type">Type <span class="sort-indicator"></span></th>
-                            <th>Age</th>
-                            <th>Languages</th>
-                            <th data-sort="duration">Duration <span class="sort-indicator"></span></th>
-                            <th data-sort="year">Year <span class="sort-indicator"></span></th>
-                            <th data-sort="is_geo_restricted">Geo-Restricted <span class="sort-indicator"></span></th>
-                            <th data-sort="restriction_type">Restriction Type <span class="sort-indicator"></span></th>
+                            <th style="width: 80px;">Irudia</th>
+                            <th data-sort="title">Izenburua <span class="sort-indicator"></span></th>
+                            <th data-sort="type">Mota <span class="sort-indicator"></span></th>
+                            <th>Adina</th>
+                            <th>Hizkuntza(k)</th>
+                            <th data-sort="duration">Iraupena <span class="sort-indicator"></span></th>
+                            <th data-sort="year">Urtea <span class="sort-indicator"></span></th>
+                            <th data-sort="is_geo_restricted">Geo-Murrizketa <span class="sort-indicator"></span></th>
+                            <th data-sort="restriction_type">Murrizketa mota <span class="sort-indicator"></span></th>
                         </tr>
                     </thead>
                     <tbody id="content-tbody">
@@ -81,7 +81,7 @@
             </div>
             <div class="pagination" id="pagination">
                 <div class="pagination-left">
-                    <label for="page-size">Rows per page:</label>
+                    <label for="page-size">Elementu orrialdeko:</label>
                     <select id="page-size">
                         <option value="25">25</option>
                         <option value="50">50</option>
@@ -90,11 +90,11 @@
                     </select>
                 </div>
                 <div class="pagination-right">
-                    <button id="first-page">« First</button>
-                    <button id="prev-page">‹ Prev</button>
-                    <span id="page-info">Page 1 of 1</span>
-                    <button id="next-page">Next ›</button>
-                    <button id="last-page">Last »</button>
+                    <button id="first-page">« Lehenengoa</button>
+                    <button id="prev-page">‹ Aurrekoa</button>
+                    <span id="page-info">1 / 1 orrialdea</span>
+                    <button id="next-page">Hurrengoa ›</button>
+                    <button id="last-page">Azkena »</button>
                 </div>
             </div>
         </section>
