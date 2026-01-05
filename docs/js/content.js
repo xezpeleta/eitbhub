@@ -443,13 +443,13 @@ function renderSeriesRow(series, isExpanded) {
     
     let restrictionSummary = '';
     if (restrictedCount > 0) {
-        restrictionSummary += `<span class="status-badge status-restricted">${restrictedCount} Restricted</span> `;
+        restrictionSummary += `<span class="status-badge status-restricted">${restrictedCount} Murriztua</span> `;
     }
     if (accessibleCount > 0) {
-        restrictionSummary += `<span class="status-badge status-accessible">${accessibleCount} Accessible</span> `;
+        restrictionSummary += `<span class="status-badge status-accessible">${accessibleCount} Murriztu gabea</span> `;
     }
     if (series.unknown_count > 0) {
-        restrictionSummary += `<span class="status-badge status-unknown">${series.unknown_count} Unknown</span>`;
+        restrictionSummary += `<span class="status-badge status-unknown">${series.unknown_count} Ezezaguna</span>`;
     }
     
     // Get thumbnail from first episode if available
