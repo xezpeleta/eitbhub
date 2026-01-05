@@ -471,7 +471,7 @@ function renderSeriesRow(series, isExpanded) {
                 </button>
             </td>
             <td class="thumbnail-cell">${thumbnailHtml}</td>
-            <td><strong>${escapeHtml(series.series_title)}</strong> <span class="series-episode-count">(${totalCount} episodes)</span></td>
+            <td><strong>${escapeHtml(series.series_title)}</strong> <span class="series-episode-count">(${totalCount} atal)</span></td>
             <td>Series</td>
             <td>-</td>
             <td>-</td>
