@@ -306,6 +306,9 @@ class ContentScraper:
             response.raise_for_status()
             media_data = response.json()
             
+            # Extract media_type (audio/video) from metadata
+            media_type = media_data.get('media_type', '').lower() if media_data.get('media_type') else None
+            
             # Check if geo-check is disabled
             if self.disable_geo_check:
                 print(f"    ℹ️  Geo-check disabled - fetching metadata only")
@@ -323,6 +326,13 @@ class ContentScraper:
                     'genres': [g.get('name') for g in media_data.get('genres', [])],
                     'metadata': media_data
                 }
+                
+                # Add media_type to metadata if present
+                if media_type:
+                    if 'metadata' not in content_data or not isinstance(content_data['metadata'], dict):
+                        content_data['metadata'] = {}
+                    if isinstance(content_data['metadata'], dict):
+                        content_data['metadata']['media_type'] = media_type
                 
                 # Preserve existing geo-restriction status if it was marked as restricted
                 if existing_status and existing_status['is_geo_restricted'] is True:
@@ -346,9 +356,16 @@ class ContentScraper:
                 
                 return content_data
             else:
-                # Normal flow - check geo-restriction via manifest
-                geo_check = self.api.check_geo_restriction(slug)
+                # Normal flow - check geo-restriction via manifest or audio file
+                # Pass media_data so API can detect audio content and check appropriate URL
+                geo_check = self.api.check_geo_restriction(slug, media_metadata=media_data)
                 self._sleep()
+                
+                # Determine restriction type based on media type
+                if geo_check.get('media_type') == 'audio':
+                    restriction_type = f"audio_{geo_check.get('status_code')}"
+                else:
+                    restriction_type = f"manifest_{geo_check.get('status_code')}"
                 
                 # Prepare content data
                 content_data = {
@@ -360,9 +377,13 @@ class ContentScraper:
                     'year': media_data.get('production_year') or media_data.get('year'),
                     'genres': [g.get('name') for g in media_data.get('genres', [])],
                     'is_geo_restricted': geo_check.get('is_geo_restricted'),
-                    'restriction_type': f"manifest_{geo_check.get('status_code')}",
+                    'restriction_type': restriction_type,
                     'metadata': media_data
                 }
+                
+                # Ensure media_type is in metadata
+                if media_type:
+                    content_data['metadata']['media_type'] = media_type
                 
                 # Save to database
                 self.db.upsert_content(content_data)
@@ -443,23 +464,34 @@ class ContentScraper:
                     if self.disable_geo_check:
                         print(f"      ℹ️  Geo-check disabled - fetching metadata only")
                         # Get existing status from DB if available
-                        existing_status = self.db.get_content_status(episode_slug)
+                        existing_status = self.db.get_content_status(episode_slug, self.platform)
+                        
+                        # Extract media_type from episode metadata
+                        episode_media_type = None
+                        if isinstance(episode_metadata, dict):
+                            episode_media_type = episode_metadata.get('media_type', '').lower() if episode_metadata.get('media_type') else None
                         
                         # Prepare content data
                         content_data = {
                             'slug': episode_slug,
                             'platform': self.platform,
-                            'title': episode_metadata.get('title') or episode.get('episode_title'),
+                            'title': episode_metadata.get('title') if isinstance(episode_metadata, dict) else episode.get('episode_title'),
                             'type': 'episode',
-                            'duration': episode_metadata.get('duration') or episode.get('duration'),
-                            'year': episode_metadata.get('production_year') or episode_metadata.get('year'),
-                            'genres': [g.get('name') for g in episode_metadata.get('genres', [])],
+                            'duration': episode_metadata.get('duration') if isinstance(episode_metadata, dict) else episode.get('duration'),
+                            'year': episode_metadata.get('production_year') or (episode_metadata.get('year') if isinstance(episode_metadata, dict) else None),
+                            'genres': [g.get('name') for g in episode_metadata.get('genres', [])] if isinstance(episode_metadata, dict) else [],
                             'series_slug': series_slug,
                             'series_title': episode.get('series_title'),
                             'season_number': episode.get('season_number'),
                             'episode_number': episode.get('episode_number'),
-                            'metadata': episode_metadata
+                            'metadata': episode_metadata if isinstance(episode_metadata, dict) else {}
                         }
+                        
+                        # Ensure media_type is in metadata
+                        if episode_media_type:
+                            if not isinstance(content_data['metadata'], dict):
+                                content_data['metadata'] = {}
+                            content_data['metadata']['media_type'] = episode_media_type
                         
                         # Preserve existing geo-restriction status if it was marked as restricted
                         if existing_status and existing_status['is_geo_restricted'] is True:
@@ -484,26 +516,45 @@ class ContentScraper:
                         episode_data_list.append(content_data)
                     else:
                         # Normal flow - check geo-restriction for this episode
-                        geo_check = self.api.check_geo_restriction(episode_slug)
+                        # Pass episode_metadata so API can detect audio content
+                        episode_meta_dict = episode_metadata if isinstance(episode_metadata, dict) else None
+                        geo_check = self.api.check_geo_restriction(episode_slug, media_metadata=episode_meta_dict)
                         self._sleep()
+                        
+                        # Extract media_type from episode metadata
+                        episode_media_type = None
+                        if isinstance(episode_metadata, dict):
+                            episode_media_type = episode_metadata.get('media_type', '').lower() if episode_metadata.get('media_type') else None
+                        
+                        # Determine restriction type based on media type
+                        if geo_check.get('media_type') == 'audio':
+                            restriction_type = f"audio_{geo_check.get('status_code')}"
+                        else:
+                            restriction_type = f"manifest_{geo_check.get('status_code')}"
                         
                         # Prepare content data
                         content_data = {
                             'slug': episode_slug,
                             'platform': self.platform,
-                            'title': episode_metadata.get('title') or episode.get('episode_title'),
+                            'title': episode_metadata.get('title') if isinstance(episode_metadata, dict) else episode.get('episode_title'),
                             'type': 'episode',
-                            'duration': episode_metadata.get('duration') or episode.get('duration'),
-                            'year': episode_metadata.get('production_year') or episode_metadata.get('year'),
-                            'genres': [g.get('name') for g in episode_metadata.get('genres', [])],
+                            'duration': episode_metadata.get('duration') if isinstance(episode_metadata, dict) else episode.get('duration'),
+                            'year': episode_metadata.get('production_year') or (episode_metadata.get('year') if isinstance(episode_metadata, dict) else None),
+                            'genres': [g.get('name') for g in episode_metadata.get('genres', [])] if isinstance(episode_metadata, dict) else [],
                             'series_slug': series_slug,
                             'series_title': episode.get('series_title'),
                             'season_number': episode.get('season_number'),
                             'episode_number': episode.get('episode_number'),
                             'is_geo_restricted': geo_check.get('is_geo_restricted'),
-                            'restriction_type': f"manifest_{geo_check.get('status_code')}",
-                            'metadata': episode_metadata
+                            'restriction_type': restriction_type,
+                            'metadata': episode_metadata if isinstance(episode_metadata, dict) else {}
                         }
+                        
+                        # Ensure media_type is in metadata
+                        if episode_media_type:
+                            if not isinstance(content_data['metadata'], dict):
+                                content_data['metadata'] = {}
+                            content_data['metadata']['media_type'] = episode_media_type
                         
                         # Save to database
                         self.db.upsert_content(content_data)

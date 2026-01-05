@@ -298,6 +298,24 @@ GET https://makusi.eus/api/v1/media/heidi-katamotzaren-erreskatea
 
 **Response**: JSON with complete media metadata. The response includes:
 
+**Media Types**:
+- **Video content** (`media_type: "video"`): Uses DASH manifests for streaming
+- **Audio content** (`media_type: "audio"`): Uses direct MP3 file URLs (no DASH manifests)
+
+For audio content, the `manifests` field contains MP3 file URLs instead of DASH manifest URLs:
+```json
+{
+  "manifests": [
+    {
+      "manifestURL": "https://cdn.primeran.eus/media/audios/23lufs_GUAU_10002379_5882603_01- Uxue Alberdi Am.mp3",
+      "type": "mp3"
+    }
+  ]
+}
+```
+
+**Response**: JSON with complete media metadata. The response includes:
+
 **Core Fields:**
 - `id` - Numeric media ID
 - `slug` - URL-friendly identifier

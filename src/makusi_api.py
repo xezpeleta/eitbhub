@@ -120,13 +120,14 @@ class MakusiAPI:
         response.raise_for_status()
         return response.json()
     
-    def check_geo_restriction(self, slug: str, language: str = 'eu') -> Dict[str, Any]:
+    def check_geo_restriction(self, slug: str, language: str = 'eu', media_metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Check if content is geo-restricted by testing manifest URL
+        Check if content is geo-restricted by testing manifest URL or audio file URL
         
         Args:
             slug: Content slug (episode slug for series, media slug for individual content)
             language: Language code (default: 'eu' for Euskara)
+            media_metadata: Optional media metadata to determine content type and get audio URLs
             
         Returns:
             Dictionary with:
@@ -134,9 +135,61 @@ class MakusiAPI:
             - status_code: HTTP status code
             - accessible: bool (True if 200, False otherwise)
             - error: str or None
+            - media_type: 'audio' or 'video' (if detected)
         """
         self.ensure_authenticated()
         
+        # Check if this is audio content
+        media_type = None
+        if media_metadata:
+            media_type = media_metadata.get('media_type', '').lower()
+        
+        # For audio content, check the actual audio file URL instead of DASH manifest
+        if media_type == 'audio' and media_metadata and 'manifests' in media_metadata:
+            manifests = media_metadata.get('manifests', [])
+            # Find MP3 manifest
+            mp3_manifest = next((m for m in manifests if m.get('type', '').lower() == 'mp3'), None)
+            
+            if mp3_manifest and 'manifestURL' in mp3_manifest:
+                audio_url = mp3_manifest['manifestURL']
+                try:
+                    response = self.session.head(audio_url, timeout=10, allow_redirects=True)
+                    status_code = response.status_code
+                    
+                    result = {
+                        'status_code': status_code,
+                        'accessible': status_code == 200,
+                        'error': None,
+                        'media_type': 'audio'
+                    }
+                    
+                    if status_code == 200:
+                        result['is_geo_restricted'] = False
+                    elif status_code == 403:
+                        result['is_geo_restricted'] = True
+                        result['error'] = 'Forbidden - Geo-restricted (audio file)'
+                    elif status_code == 500:
+                        result['is_geo_restricted'] = True
+                        result['error'] = 'Server error (500) - likely geo-restricted'
+                    elif status_code == 404:
+                        result['is_geo_restricted'] = None
+                        result['error'] = 'Not found - Audio file may not exist'
+                    else:
+                        result['is_geo_restricted'] = None
+                        result['error'] = f'Unexpected status code: {status_code}'
+                    
+                    return result
+                    
+                except requests.exceptions.RequestException as e:
+                    return {
+                        'status_code': None,
+                        'accessible': False,
+                        'is_geo_restricted': None,
+                        'error': str(e),
+                        'media_type': 'audio'
+                    }
+        
+        # For video content (or if audio check failed), use DASH manifest
         manifest_url = f"https://makusi.eus/manifests/{slug}/{language}/widevine/dash.mpd"
         
         try:
@@ -146,7 +199,8 @@ class MakusiAPI:
             result = {
                 'status_code': status_code,
                 'accessible': status_code == 200,
-                'error': None
+                'error': None,
+                'media_type': 'video' if media_type != 'audio' else media_type
             }
             
             if status_code == 200:
@@ -172,7 +226,8 @@ class MakusiAPI:
                 'status_code': None,
                 'accessible': False,
                 'is_geo_restricted': None,
-                'error': str(e)
+                'error': str(e),
+                'media_type': 'video' if media_type != 'audio' else media_type
             }
     
     def get_all_episodes_from_series(self, series_slug: str) -> List[Dict[str, Any]]:

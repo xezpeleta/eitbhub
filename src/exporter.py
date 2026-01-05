@@ -276,6 +276,7 @@ class JSONExporter:
                 'available_until': self._extract_from_metadata(item, 'available_until'),
                 'languages': self._extract_languages(item),
                 'platform': item.get('platform', 'primeran.eus'),
+                'media_type': self._extract_from_metadata(item, 'media_type'),  # audio or video
                 'content_url': self._get_content_url(item)
             }
             export_data['content'].append(content_item)

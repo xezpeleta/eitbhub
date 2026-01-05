@@ -143,6 +143,7 @@ function populateFilters() {
     populateAgeRatingFilter();
     populateLanguageFilter();
     populatePlatformFilter();
+    populateMediaTypeFilter();
 }
 
 // Populate type filter dropdown
@@ -202,6 +203,19 @@ function populatePlatformFilter() {
         const displayName = platform.replace('.eus', '').replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
         option.textContent = displayName;
         platformFilter.appendChild(option);
+    });
+}
+
+// Populate media type filter
+function populateMediaTypeFilter() {
+    const mediaTypeFilter = document.getElementById('media-type-filter');
+    const mediaTypes = [...new Set(allContent.map(item => item.media_type).filter(Boolean))].sort();
+    
+    mediaTypes.forEach(mediaType => {
+        const option = document.createElement('option');
+        option.value = mediaType;
+        option.textContent = mediaType.charAt(0).toUpperCase() + mediaType.slice(1);
+        mediaTypeFilter.appendChild(option);
     });
 }
 
@@ -645,6 +659,7 @@ function clearFilters() {
     document.getElementById('age-rating-filter').value = '';
     document.getElementById('language-filter').value = '';
     document.getElementById('platform-filter').value = '';
+    document.getElementById('media-type-filter').value = '';
     currentPage = 1;
     applyFilters();
 }
@@ -660,6 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('age-rating-filter').addEventListener('change', applyFilters);
     document.getElementById('language-filter').addEventListener('change', applyFilters);
     document.getElementById('platform-filter').addEventListener('change', applyFilters);
+    document.getElementById('media-type-filter').addEventListener('change', applyFilters);
     document.getElementById('clear-filters').addEventListener('click', clearFilters);
     
     // Pagination controls
