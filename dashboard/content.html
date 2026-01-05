@@ -79,6 +79,24 @@
                     </tbody>
                 </table>
             </div>
+            <div class="pagination" id="pagination">
+                <div class="pagination-left">
+                    <label for="page-size">Rows per page:</label>
+                    <select id="page-size">
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
+                <div class="pagination-right">
+                    <button id="first-page">« First</button>
+                    <button id="prev-page">‹ Prev</button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="next-page">Next ›</button>
+                    <button id="last-page">Last »</button>
+                </div>
+            </div>
         </section>
     </main>
 

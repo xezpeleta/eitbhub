@@ -5,6 +5,68 @@ let filteredGroupedContent = { series: [], standalone: [] };
 let expandedSeries = new Set();
 let currentSort = { field: null, direction: 'asc' };
 
+// Pagination state
+let pageSize = 100; // rows per page (flattened rows: standalone items, series headers, and expanded episodes)
+let currentPage = 1; // 1-based index
+
+// Build a flattened list of rows (standalone items, series headers, and expanded episodes)
+function buildFlattenedRows() {
+    const rows = [];
+
+    // Standalone items first
+    filteredGroupedContent.standalone.forEach(item => {
+        rows.push({ type: 'standalone', item });
+    });
+
+    // Series and their episodes
+    filteredGroupedContent.series.forEach(series => {
+        const isExpanded = expandedSeries.has(series.series_slug);
+        rows.push({ type: 'series', series, isExpanded });
+
+        if (isExpanded) {
+            series.episodes.forEach(episode => {
+                rows.push({ type: 'episode', item: episode, seriesSlug: series.series_slug, isExpanded });
+            });
+        }
+    });
+
+    return rows;
+}
+
+// Get total number of rendered rows (for pagination)
+function getTotalRows() {
+    return buildFlattenedRows().length;
+}
+
+// Get total number of pages
+function getPageCount(totalRows) {
+    if (totalRows === 0) return 1;
+    return Math.max(1, Math.ceil(totalRows / pageSize));
+}
+
+// Navigate to a specific page
+function goToPage(page) {
+    const totalRows = getTotalRows();
+    const pageCount = getPageCount(totalRows);
+    const targetPage = Math.min(Math.max(1, page), pageCount);
+    if (targetPage !== currentPage) {
+        currentPage = targetPage;
+        renderTable();
+        updateResultsCount(); // keep counts and page info in sync
+    }
+}
+
+// Change page size
+function changePageSize(newSize) {
+    const size = parseInt(newSize, 10);
+    if (!isNaN(size) && size > 0) {
+        pageSize = size;
+        currentPage = 1;
+        renderTable();
+        updateResultsCount();
+    }
+}
+
 // Load content data
 async function loadContent() {
     try {
@@ -169,6 +231,9 @@ function applyFilters() {
         sortContent(currentSort.field, currentSort.direction, false);
     }
     
+    // Reset to first page after filtering
+    currentPage = 1;
+    
     renderTable();
     updateResultsCount();
 }
@@ -245,7 +310,10 @@ function sortContent(field, direction = 'asc', updateUI = true) {
     if (updateUI) {
         currentSort = { field, direction };
         updateSortIndicators();
+        // Reset to first page on sort change
+        currentPage = 1;
         renderTable();
+        updateResultsCount();
     }
 }
 
@@ -303,30 +371,52 @@ function toggleSeriesExpansion(seriesSlug) {
 function renderTable() {
     const tbody = document.getElementById('content-tbody');
     
-    const totalItems = filteredGroupedContent.standalone.length + 
-                      filteredGroupedContent.series.reduce((sum, s) => sum + s.episode_count, 0);
+    const allRows = buildFlattenedRows();
+    const totalRows = allRows.length;
     
-    if (totalItems === 0) {
+    if (totalRows === 0) {
         tbody.innerHTML = '<tr><td colspan="10" class="loading">No content found matching filters.</td></tr>';
+        renderPagination(1, 0, 0, 0);
         return;
     }
     
+    const pageCount = getPageCount(totalRows);
+    if (currentPage > pageCount) {
+        currentPage = pageCount;
+    }
+
+    let startIndex = (currentPage - 1) * pageSize;
+    let endIndex = startIndex + pageSize;
+
+    if (startIndex >= totalRows) {
+        startIndex = 0;
+        endIndex = Math.min(pageSize, totalRows);
+        currentPage = 1;
+    }
+
+    // Ensure we include the series header if the page would otherwise start in the middle of its episodes
+    if (startIndex > 0 && allRows[startIndex].type === 'episode') {
+        let i = startIndex - 1;
+        while (i >= 0 && allRows[i].type !== 'series') {
+            i--;
+        }
+        if (i >= 0) {
+            startIndex = i;
+        }
+    }
+
+    endIndex = Math.min(endIndex, totalRows);
+    const pageRows = allRows.slice(startIndex, endIndex);
+
     let html = '';
     
-    // Render standalone content
-    filteredGroupedContent.standalone.forEach(item => {
-        html += renderContentRow(item, false, false);
-    });
-    
-    // Render series and their episodes
-    filteredGroupedContent.series.forEach(series => {
-        const isExpanded = expandedSeries.has(series.series_slug);
-        html += renderSeriesRow(series, isExpanded);
-        
-        if (isExpanded) {
-            series.episodes.forEach(episode => {
-                html += renderContentRow(episode, true, true);
-            });
+    pageRows.forEach(row => {
+        if (row.type === 'standalone') {
+            html += renderContentRow(row.item, false, false);
+        } else if (row.type === 'series') {
+            html += renderSeriesRow(row.series, row.isExpanded);
+        } else if (row.type === 'episode') {
+            html += renderContentRow(row.item, true, row.isExpanded);
         }
     });
     
@@ -340,6 +430,9 @@ function renderTable() {
             toggleSeriesExpansion(seriesSlug);
         });
     });
+
+    // Update pagination controls
+    renderPagination(pageCount, totalRows, startIndex, endIndex);
 }
 
 // Render series row
@@ -475,8 +568,44 @@ function updateResultsCount() {
     const seriesCount = filteredGroupedContent.series.length;
     const totalCount = standaloneCount + episodeCount;
     
-    const countText = `${totalCount.toLocaleString()} items (${standaloneCount} standalone, ${seriesCount} series with ${episodeCount} episodes)`;
+    const totalRows = getTotalRows();
+    const pageCount = getPageCount(totalRows);
+    const countText = `${totalCount.toLocaleString()} items (${standaloneCount} standalone, ${seriesCount} series with ${episodeCount} episodes) — Page ${currentPage} of ${pageCount}`;
     document.getElementById('results-count').textContent = countText;
+}
+
+// Render pagination controls
+function renderPagination(pageCount, totalRows, startIndex, endIndex) {
+    const pageInfoEl = document.getElementById('page-info');
+    const firstBtn = document.getElementById('first-page');
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+    const lastBtn = document.getElementById('last-page');
+    const pageSizeSelect = document.getElementById('page-size');
+
+    if (pageSizeSelect) {
+        if (!pageSizeSelect.value) {
+            pageSizeSelect.value = String(pageSize);
+        }
+    }
+
+    if (pageInfoEl) {
+        if (totalRows === 0) {
+            pageInfoEl.textContent = 'No rows';
+        } else {
+            const from = startIndex + 1;
+            const to = endIndex;
+            pageInfoEl.textContent = `Page ${currentPage} of ${pageCount} · Rows ${from}-${to} of ${totalRows}`;
+        }
+    }
+
+    const atFirstPage = currentPage <= 1;
+    const atLastPage = currentPage >= pageCount;
+
+    if (firstBtn) firstBtn.disabled = atFirstPage;
+    if (prevBtn) prevBtn.disabled = atFirstPage;
+    if (nextBtn) nextBtn.disabled = atLastPage;
+    if (lastBtn) lastBtn.disabled = atLastPage;
 }
 
 // Clear filters
@@ -486,6 +615,7 @@ function clearFilters() {
     document.getElementById('restriction-filter').value = '';
     document.getElementById('age-rating-filter').value = '';
     document.getElementById('language-filter').value = '';
+    currentPage = 1;
     applyFilters();
 }
 
@@ -500,6 +630,28 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('age-rating-filter').addEventListener('change', applyFilters);
     document.getElementById('language-filter').addEventListener('change', applyFilters);
     document.getElementById('clear-filters').addEventListener('click', clearFilters);
+    
+    // Pagination controls
+    const pageSizeSelect = document.getElementById('page-size');
+    if (pageSizeSelect) {
+        pageSizeSelect.value = String(pageSize);
+        pageSizeSelect.addEventListener('change', (event) => {
+            changePageSize(event.target.value);
+        });
+    }
+
+    const firstBtn = document.getElementById('first-page');
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+    const lastBtn = document.getElementById('last-page');
+
+    if (firstBtn) firstBtn.addEventListener('click', () => goToPage(1));
+    if (prevBtn) prevBtn.addEventListener('click', () => goToPage(currentPage - 1));
+    if (nextBtn) nextBtn.addEventListener('click', () => goToPage(currentPage + 1));
+    if (lastBtn) lastBtn.addEventListener('click', () => {
+        const totalRows = getTotalRows();
+        goToPage(getPageCount(totalRows));
+    });
     
     // Sort headers
     document.querySelectorAll('th[data-sort]').forEach(th => {
