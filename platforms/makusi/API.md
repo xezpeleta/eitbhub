@@ -11,10 +11,10 @@ The API key `4_OrNV-xF_hgF-IKSFkQrJxg` referenced throughout this documentation 
 ## Base URLs
 
 - **Main API**: `https://makusi.eus/api/v1/`
-- **Raw API**: `https://makusi.eus/api/raw/v1/` (inferred, similar to Primeran)
-- **Video Manifests**: `https://makusi.eus/manifests/` (inferred, similar to Primeran)
-- **DRM License**: `https://makusi.eus/drm/widevine/` (inferred, similar to Primeran)
-- **CDN**: `https://cdn.primeran.eus/media/` (shared with Primeran)
+- **Raw API**: `https://makusi.eus/api/raw/v1/`
+- **Video Manifests**: `https://makusi.eus/manifests/`
+- **DRM License**: `https://makusi.eus/drm/widevine/`
+- **Video CDN**: `https://cdn.makusi.eus/media/`
 - **Image CDN**: `https://img.primeran.eus/imgproxy/` (shared with Primeran)
 - **Storage CDN**: `https://cdnstorage.primeran.eus/` (shared with Primeran)
 - **Web Assets CDN**: `https://cdnweb.makusi.eus/`
@@ -399,6 +399,23 @@ GET https://makusi.eus/api/v1/series/goazen-d12
 3. Each episode has its own `slug` that can be used with the manifest endpoint
 4. Series structure: Series → Seasons → Episodes
 
+---
+
+### 2.1. Get Series Clips
+
+**Endpoint**: `GET /api/v1/series/{series_id}/clip`
+
+**Description**: Retrieves clips/previews for a series.
+
+**Example**:
+```
+GET https://makusi.eus/api/v1/series/2158/clip
+```
+
+**Response**: JSON with clip information for the series.
+
+---
+
 **Testing Geo-Restrictions for Series**:
 ```python
 # ✗ WRONG - This will return 404
@@ -758,16 +775,16 @@ POST https://makusi.eus/drm/widevine/112598/662f4a9a-1871-4d37-8d0c-d58adcc62b16
 **Examples**:
 ```
 # Video initialization segment (1080p)
-GET https://cdn.primeran.eus/media/a242dfb25540853d4403554f0ee858c8/cenc/1080/init.mp4
+GET https://cdn.makusi.eus/media/3332299a9e2f4331448afec033830a76/cenc/1080/init.mp4
 
 # Video segment #1 (1080p)
-GET https://cdn.primeran.eus/media/a242dfb25540853d4403554f0ee858c8/cenc/1080/1.m4s
+GET https://cdn.makusi.eus/media/3332299a9e2f4331448afec033830a76/cenc/1080/1.m4s
 
 # Audio initialization segment (Basque)
-GET https://cdn.primeran.eus/media/a242dfb25540853d4403554f0ee858c8/cenc/audio_baq/init.mp4
+GET https://cdn.makusi.eus/media/3332299a9e2f4331448afec033830a76/cenc/audio_baq/init.mp4
 
 # Audio segment #1 (Basque)
-GET https://cdn.primeran.eus/media/a242dfb25540853d4403554f0ee858c8/cenc/audio_baq/1.m4s
+GET https://cdn.makusi.eus/media/3332299a9e2f4331448afec033830a76/cenc/audio_baq/1.m4s
 ```
 
 **Response**: Binary MP4 segment (encrypted with CENC)
@@ -829,14 +846,15 @@ The platform uses Youbora for video analytics:
 
 **Endpoints**:
 - `GET https://a-fds.youborafds01.com/data` - Fast data service
-- `GET https://infinity-c41.youboranqs01.com/init` - Session initialization
-- `GET https://infinity-c41.youboranqs01.com/start` - Playback start
-- `GET https://infinity-c41.youboranqs01.com/joinTime` - Join time tracking
-- `GET https://infinity-c41.youboranqs01.com/ping` - Periodic heartbeat
+- `GET https://infinity-c35.youboranqs01.com/init` - Session initialization
+- `GET https://infinity-c35.youboranqs01.com/start` - Playback start
+- `GET https://infinity-c35.youboranqs01.com/joinTime` - Join time tracking
+- `GET https://infinity-c35.youboranqs01.com/ping` - Periodic heartbeat
+- `GET https://infinity-c35.youboranqs01.com/seek` - Seek tracking
 
 **Parameters Tracked**:
 - Account code: `etb`
-- Player: `Shaka v4.16.9` (inferred, similar to Primeran)
+- Player: `Shaka v4.16.9`
 - Content metadata (title, duration, type)
 - Playback metrics (bitrate, throughput, dropped frames)
 - User session info
@@ -867,10 +885,10 @@ The platform uses ComScore for audience measurement:
 - Uses Directus CMS structure: `/directus/eitb/{uuid}.{ext}`
 - **Shared with Primeran.eus**
 
-**Video CDN** (`cdn.primeran.eus`):
+**Video CDN** (`cdn.makusi.eus`):
 - Video and audio segments
 - Organized by content hash and quality level
-- **Shared with Primeran.eus**
+- **Makusi-specific**
 
 **Web Assets CDN** (`cdnweb.makusi.eus`):
 - JavaScript bundles
@@ -884,11 +902,11 @@ The platform uses ComScore for audience measurement:
 
 ### Technology Stack
 
-- **Player**: Shaka Player v4.16.9 (inferred, similar to Primeran)
+- **Player**: Shaka Player v4.16.9
 - **Streaming Protocol**: MPEG-DASH
 - **DRM**: Widevine
 - **Encryption**: CENC (Common Encryption)
-- **Analytics**: Youbora v6.8.9, ComScore
+- **Analytics**: Youbora v6.8.9-shaka-js (adapter), ComScore
 
 ### Available Qualities
 
