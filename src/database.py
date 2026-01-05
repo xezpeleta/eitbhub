@@ -144,6 +144,30 @@ class ContentDatabase:
         self.conn.commit()
         return cursor.lastrowid
     
+    def get_content_status(self, slug: str) -> Optional[Dict[str, Any]]:
+        """
+        Get existing content's geo-restriction status
+        
+        Args:
+            slug: Content slug
+            
+        Returns:
+            Dictionary with is_geo_restricted and restriction_type, or None if not found
+        """
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT is_geo_restricted, restriction_type 
+            FROM content 
+            WHERE slug = ?
+        """, (slug,))
+        row = cursor.fetchone()
+        if row:
+            return {
+                'is_geo_restricted': row['is_geo_restricted'],
+                'restriction_type': row['restriction_type']
+            }
+        return None
+    
     def add_check_history(self, slug: str, check_result: Dict[str, Any]):
         """
         Add a check history record

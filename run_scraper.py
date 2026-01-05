@@ -28,6 +28,8 @@ def main():
     parser.add_argument('--output-dir', default='dashboard/data', help='Output directory for JSON')
     parser.add_argument('--delay', type=float, default=0.5, help='Delay between requests (seconds)')
     parser.add_argument('--limit', type=int, help='Limit number of items to check (for testing)')
+    parser.add_argument('--disable-geo-check', action='store_true', 
+                        help='Skip geo-restriction checks (useful when using VPN to update metadata)')
     
     args = parser.parse_args()
     
@@ -42,8 +44,13 @@ def main():
         db = ContentDatabase(args.db)
         print("✓ Database ready")
         
-        scraper = ContentScraper(api, db, delay=args.delay)
+        scraper = ContentScraper(api, db, delay=args.delay, disable_geo_check=args.disable_geo_check)
         exporter = JSONExporter(db, args.output_dir)
+        
+        if args.disable_geo_check:
+            print("⚠️  Geo-restriction checking is DISABLED")
+            print("   This mode will update metadata but preserve existing geo-restriction status")
+            print("   Use this when running via VPN to update metadata for geo-restricted content\n")
         
         # Run scraper
         if args.test:
