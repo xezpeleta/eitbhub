@@ -213,6 +213,19 @@ function groupContentBySeries() {
                 }
             }
         });
+
+        // Default sort for episodes: season (mapped/inferred) -> episode_number -> title
+        series.episodes.sort((a, b) => {
+            const seasonA = a.season_display ?? a.season_number ?? inferSeasonFromTitle(a.title) ?? Number.MAX_SAFE_INTEGER;
+            const seasonB = b.season_display ?? b.season_number ?? inferSeasonFromTitle(b.title) ?? Number.MAX_SAFE_INTEGER;
+            if (seasonA !== seasonB) return seasonA - seasonB;
+
+            const epA = a.episode_number ?? Number.MAX_SAFE_INTEGER;
+            const epB = b.episode_number ?? Number.MAX_SAFE_INTEGER;
+            if (epA !== epB) return epA - epB;
+
+            return String(a.title || a.slug || '').localeCompare(String(b.title || b.slug || ''));
+        });
     });
 }
 
