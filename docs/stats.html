@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EITBHub – Stats</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>EITBHub</h1>
+            <p class="subtitle">Estatistikak eta ikuspegi orokorra</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section id="stats-overview" class="stats-overview">
+            <div class="stat-card">
+                <div id="total-content" class="stat-value">-</div>
+                <div class="stat-label">Edukia guztira</div>
+            </div>
+            <div class="stat-card">
+                <div id="geo-restricted" class="stat-value">-</div>
+                <div class="stat-label">Geo-murriztua</div>
+            </div>
+            <div class="stat-card">
+                <div id="accessible" class="stat-value">-</div>
+                <div class="stat-label">Murriztu gabea</div>
+            </div>
+            <div class="stat-card">
+                <div id="restriction-percentage" class="stat-value">-</div>
+                <div class="stat-label">% murriztua</div>
+            </div>
+            <div class="stat-card">
+                <div id="last-updated" class="stat-value" style="font-size: 1rem;">-</div>
+                <div class="stat-label">Azken eguneratzea</div>
+            </div>
+        </section>
+
+        <section class="charts-section">
+            <div class="chart-container">
+                <h2>Edukia urtez</h2>
+                <canvas id="year-chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Edukia hizkuntzaz</h2>
+                <canvas id="language-chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Edukia adin-tartez</h2>
+                <canvas id="age-rating-chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Geo-murrizketa plataformaz</h2>
+                <canvas id="geo-platform-chart"></canvas>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 EITBHub |
+               <a href="https://github.com/xezpeleta/eitbhub">Source Code</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
+

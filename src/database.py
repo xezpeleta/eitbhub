@@ -367,12 +367,12 @@ class ContentDatabase:
                 WHERE slug = ? AND EXISTS (SELECT 1 FROM json_each(platform) WHERE value = ?)
             """, (slug, platform))
         else:
-        cursor.execute("""
-            SELECT is_geo_restricted, restriction_type 
-            FROM content 
-            WHERE slug = ?
-                LIMIT 1
-        """, (slug,))
+            cursor.execute("""
+                SELECT is_geo_restricted, restriction_type 
+                FROM content 
+                WHERE slug = ?
+                    LIMIT 1
+            """, (slug,))
         row = cursor.fetchone()
         if row:
             return {
@@ -524,6 +524,76 @@ class ContentDatabase:
             GROUP BY json_each.value
         """)
         stats['by_platform'] = {row[0]: row[1] for row in cursor.fetchall()}
+
+        # By year (excluding NULL years)
+        if where_clause:
+            year_where = f"{where_clause} AND year IS NOT NULL"
+        else:
+            year_where = "WHERE year IS NOT NULL"
+        cursor.execute(f"""
+            SELECT year, COUNT(*) as count
+            FROM content
+            {year_where}
+            GROUP BY year
+            ORDER BY year
+        """, params)
+        stats['by_year'] = {row[0]: row[1] for row in cursor.fetchall()}
+
+        # By age rating (derived from metadata JSON)
+        cursor.execute(f"""
+            SELECT
+                TRIM(
+                    COALESCE(
+                        json_extract(metadata, '$.age_rating.label'),
+                        json_extract(metadata, '$.age_rating.age'),
+                        'Unknown'
+                    )
+                ) as age_rating,
+                COUNT(*) as count
+            FROM content
+            {where_clause}
+            GROUP BY age_rating
+            ORDER BY count DESC
+        """, params)
+        stats['by_age_rating'] = {row[0]: row[1] for row in cursor.fetchall()}
+
+        # By language code (from metadata JSON; tolerate malformed JSON)
+        cursor.execute("""
+            WITH all_langs AS (
+                SELECT
+                    LOWER(TRIM(
+                        COALESCE(
+                            json_extract(metadata, '$.primary_language.code'),
+                            json_extract(metadata, '$.audio_language.code'),
+                            json_extract(metadata, '$.language.code')
+                        )
+                    )) AS lang
+                FROM content
+            )
+            SELECT lang, COUNT(*) AS count
+            FROM all_langs
+            WHERE lang IS NOT NULL AND lang != ''
+            GROUP BY lang
+            ORDER BY count DESC
+        """)
+        stats['by_language'] = {row[0]: row[1] for row in cursor.fetchall()}
+
+        # Geo-restricted by platform (restricted and accessible counts per platform)
+        cursor.execute("""
+            SELECT
+                json_each.value as platform,
+                SUM(CASE WHEN content.is_geo_restricted = 1 THEN 1 ELSE 0 END) AS restricted_count,
+                SUM(CASE WHEN content.is_geo_restricted = 0 THEN 1 ELSE 0 END) AS accessible_count
+            FROM content, json_each(content.platform)
+            GROUP BY json_each.value
+        """)
+        stats['geo_restricted_by_platform'] = {
+            row[0]: {
+                'restricted': row[1],
+                'accessible': row[2]
+            }
+            for row in cursor.fetchall()
+        }
         
         # Geo-restricted
         geo_where = "WHERE is_geo_restricted = 1" if not where_clause else f"{where_clause} AND is_geo_restricted = 1"
