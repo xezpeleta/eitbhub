@@ -1,13 +1,11 @@
 {
-  "export_date": "2026-01-06T00:27:06.587567",
+  "export_date": "2026-01-06T02:49:42.045593",
   "statistics": {
     "total_content": 11346,
     "by_type": {
-      "episode": 9783,
-      "live": 1,
+      "episode": 10735,
       "series": 145,
-      "unknown": 989,
-      "vod": 428
+      "vod": 466
     },
     "by_platform": {
       "makusi.eus": 6079,
@@ -17,6 +15,6 @@
     "accessible_count": 6222,
     "unknown_count": 145,
     "geo_restricted_percentage": 43.883306892296844,
-    "last_check": "2026-01-06T00:26:03.696768"
+    "last_check": "2026-01-06T02:48:32.534017"
   }
 }
