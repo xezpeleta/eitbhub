@@ -970,15 +970,15 @@ function renderDetailRow(item, isEpisode) {
         `;
     }
 
-    // Combined inline meta row: duration, age badge, media type icon, availability, languages, platforms
+    // Combined inline meta row: duration, age badge, media type icon, languages, platforms, availability (Noiz arte last)
     const inlineParts = [];
     if (item.duration) inlineParts.push(formatDuration(item.duration));
     if (item.age_rating) inlineParts.push(`<span class="age-rating-badge">${escapeHtml(item.age_rating)}</span>`);
     const mediaTypeIcon = item.media_type ? renderMediaTypeIcon(item.media_type) : '';
     if (mediaTypeIcon) inlineParts.push(mediaTypeIcon);
-    if (availableText) inlineParts.push(availableText);
     if (languagesBadges) inlineParts.push(languagesBadges);
     if (platformDisplay) inlineParts.push(platformDisplay);
+    if (availableText) inlineParts.push(availableText);
     const inlineMeta = inlineParts.length > 0
         ? `<div class="detail-meta-line detail-meta-inline">${inlineParts.join(' ')}</div>`
         : '';
