@@ -585,9 +585,9 @@ class ContentScraper:
                 
                 # Update stats
                 self.stats['total_checked'] += 1
-                if geo_check.get('is_geo_restricted') is True:
+                if is_geo_restricted is True:
                     self.stats['geo_restricted'] += 1
-                elif geo_check.get('is_geo_restricted') is False:
+                elif is_geo_restricted is False:
                     self.stats['accessible'] += 1
                 
                 return content_data
@@ -811,9 +811,9 @@ class ContentScraper:
                                     print(f"      ⚠️  Manifest check returned None but status_code={status_code}, treating as geo-restricted")
                                 else:
                                     # For other cases (404, network errors, etc.), log warning but keep as None
-                                    print(f"      ⚠️  Geo-restriction status unclear for {episode_slug}: {geo_check.get('error', 'Unknown error')}")
-                            
-                        # Prepare content data
+                                print(f"      ⚠️  Geo-restriction status unclear for {episode_slug}: {geo_check.get('error', 'Unknown error')}")
+                        
+                            # Prepare content data
                             # Add platform URL to metadata
                             metadata = episode_metadata.copy() if isinstance(episode_metadata, dict) else {}
                             metadata = self._add_platform_url_to_metadata(metadata, episode_slug, 'episode', series_slug)
@@ -822,35 +822,35 @@ class ContentScraper:
                             if episode_media_type:
                                 metadata['media_type'] = episode_media_type
                             
-                        content_data = {
-                            'slug': episode_slug,
+                            content_data = {
+                                'slug': episode_slug,
                                 'platform': self.platform,
                                 'title': episode_metadata.get('title') if isinstance(episode_metadata, dict) else episode.get('episode_title'),
-                            'type': 'episode',
+                                'type': 'episode',
                                 'duration': episode_metadata.get('duration') if isinstance(episode_metadata, dict) else episode.get('duration'),
                                 'year': episode_metadata.get('production_year') or (episode_metadata.get('year') if isinstance(episode_metadata, dict) else None),
                                 'genres': [g.get('name') for g in episode_metadata.get('genres', [])] if isinstance(episode_metadata, dict) else [],
-                            'series_slug': series_slug,
-                            'series_title': episode.get('series_title'),
-                            'season_number': episode.get('season_number'),
-                            'episode_number': episode.get('episode_number'),
+                                'series_slug': series_slug,
+                                'series_title': episode.get('series_title'),
+                                'season_number': episode.get('season_number'),
+                                'episode_number': episode.get('episode_number'),
                                 'is_geo_restricted': is_geo_restricted,
                                 'restriction_type': restriction_type if is_geo_restricted is not None else None,
                                 'metadata': metadata
-                        }
-                        
-                        # Save to database
-                        self.db.upsert_content(content_data)
-                        self.db.add_check_history(episode_slug, geo_check)
-                        
-                        # Update stats
-                        self.stats['total_checked'] += 1
-                        if geo_check.get('is_geo_restricted') is True:
-                            self.stats['geo_restricted'] += 1
-                        elif geo_check.get('is_geo_restricted') is False:
-                            self.stats['accessible'] += 1
-                        
-                        episode_data_list.append(content_data)
+                            }
+                            
+                            # Save to database
+                            self.db.upsert_content(content_data)
+                            self.db.add_check_history(episode_slug, geo_check)
+                            
+                            # Update stats
+                            self.stats['total_checked'] += 1
+                            if is_geo_restricted is True:
+                                self.stats['geo_restricted'] += 1
+                            elif is_geo_restricted is False:
+                                self.stats['accessible'] += 1
+                            
+                            episode_data_list.append(content_data)
                     
                 except Exception as e:
                     print(f"      Error checking episode {episode_slug}: {e}")
