@@ -20,7 +20,7 @@ from src.exporter import JSONExporter
 
 def main():
     parser = argparse.ArgumentParser(description='Scrape EITB platform content and check geo-restrictions')
-    parser.add_argument('--platform', choices=['primeran', 'makusi'], default='primeran',
+    parser.add_argument('--platform', choices=['primeran', 'makusi', 'etbon'], default='primeran',
                         help='Platform to scrape (default: primeran)')
     parser.add_argument('--test', action='store_true', help='Run with test data (few items)')
     parser.add_argument('--media-slug', help='Check specific media slug')
@@ -31,6 +31,10 @@ def main():
     parser.add_argument('--limit', type=int, help='Limit number of items to check (for testing)')
     parser.add_argument('--disable-geo-check', action='store_true', 
                         help='Skip geo-restriction checks (useful when using VPN to update metadata)')
+    parser.add_argument('--channels', action='store_true',
+                        help='Also scrape live channels (ETB On only)')
+    parser.add_argument('--geo-restricted-only', action='store_true',
+                        help='Only update geo-restricted content (use with --disable-geo-check)')
     
     args = parser.parse_args()
     
@@ -40,9 +44,12 @@ def main():
         if args.platform == 'makusi':
             from src.makusi_api import MakusiAPI
             api = MakusiAPI()
+        elif args.platform == 'etbon':
+            from src.etbon_api import EtbonAPI
+            api = EtbonAPI()
         else:
             from src.primeran_api import PrimeranAPI
-        api = PrimeranAPI()
+            api = PrimeranAPI()
         
         api.login()
         print("✓ Authenticated")
@@ -56,6 +63,10 @@ def main():
         
         if args.disable_geo_check:
             print("⚠️  Geo-restriction checking is DISABLED")
+            if args.geo_restricted_only:
+                print("   Mode: Update ONLY geo-restricted content")
+            else:
+                print("   Mode: Update ALL content")
             print("   This mode will update metadata but preserve existing geo-restriction status")
             print("   Use this when running via VPN to update metadata for geo-restricted content\n")
         
@@ -66,11 +77,15 @@ def main():
             if args.platform == 'makusi':
                 test_media = ['zuk-zeuk-egin-1-domino-harriekin', 'ikusi-makusiren-aurkezpena', 'twin-melody-gabon-kantak']
                 test_series = ['goazen-d12', 'kody-kapow']
+            elif args.platform == 'etbon':
+                # ETB On test data
+                test_media = ['7073_5182885942461937664', '7073_5182885942461937666']
+                test_series = ['7073_5182885942461937660']
             else:
                 # Primeran test data
-            test_media = ['la-infiltrada', 'itoiz-udako-sesioak', 'gatibu-azken-kontzertua-zuzenean']
-            test_series = ['lau-hankan', 'krimenak-gure-kronika-beltza']
-            scraper.scrape_all(media_slugs=test_media, series_slugs=test_series)
+                test_media = ['la-infiltrada', 'itoiz-udako-sesioak', 'gatibu-azken-kontzertua-zuzenean']
+                test_series = ['lau-hankan', 'krimenak-gure-kronika-beltza']
+            scraper.scrape_all(media_slugs=test_media, series_slugs=test_series, check_channels=args.channels)
         elif args.media_slug:
             print(f"\nChecking media: {args.media_slug}")
             scraper.check_media(args.media_slug)
@@ -78,10 +93,19 @@ def main():
             print(f"\nChecking series: {args.series_slug}")
             scraper.check_series(args.series_slug)
         else:
-            # Full scrape
-            print("\n[FULL MODE] Starting full content scrape...")
-            print("This will discover and check all content (may take a while)...")
-            scraper.scrape_all(limit=args.limit)
+            # Full scrape or geo-restricted only
+            if args.geo_restricted_only:
+                print("\n[GEO-RESTRICTED ONLY MODE] Updating geo-restricted content...")
+                # Get geo-restricted content from database
+                geo_restricted = db.get_all_content(geo_restricted_only=True, platform=api.platform)
+                media_slugs = [item['slug'] for item in geo_restricted if item['type'] not in ['series', 'live']]
+                series_slugs = [item['slug'] for item in geo_restricted if item['type'] == 'series']
+                print(f"Found {len(media_slugs)} geo-restricted media and {len(series_slugs)} geo-restricted series")
+                scraper.scrape_all(media_slugs=media_slugs, series_slugs=series_slugs, check_channels=args.channels)
+            else:
+                print("\n[FULL MODE] Starting full content scrape...")
+                print("This will discover and check all content (may take a while)...")
+                scraper.scrape_all(limit=args.limit, check_channels=args.channels)
         
         # Export to JSON
         print("\n" + "=" * 80)

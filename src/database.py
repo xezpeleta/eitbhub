@@ -38,7 +38,7 @@ class ContentDatabase:
                 slug TEXT NOT NULL UNIQUE,
                 platform TEXT NOT NULL DEFAULT '["primeran.eus"]',
                 title TEXT,
-                type TEXT NOT NULL,  -- 'movie', 'episode', 'documentary', 'concert', etc.
+                type TEXT NOT NULL,  -- 'movie', 'episode', 'documentary', 'concert', 'live', etc.
                 duration INTEGER,  -- Duration in seconds
                 year INTEGER,
                 genres TEXT,  -- JSON array

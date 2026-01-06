@@ -148,25 +148,29 @@ class EtbonAPI:
         media_metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Check if content is geo-restricted.
+        Check if content is geo-restricted by testing manifest URL and CDN segments.
 
-        For now, ETB On streaming endpoints have not been fully reversed, so
-        this returns a stub result with is_geo_restricted = None. This keeps
-        the scraper logic working without making incorrect assumptions.
+        This method performs a multi-level check:
+        1. Tests the API response for explicit geo-restriction errors
+        2. For CDN-based content, tests actual media segments for HTTP 451 blocks
+        3. Falls back to standard manifest URL testing
 
         Args:
             slug: Content slug (episode slug for series, media slug for individual content)
             language: Language code (default: 'eu' for Euskara)
-            media_metadata: Optional media metadata (unused for now, reserved for future)
+            media_metadata: Optional media metadata to determine content type
 
         Returns:
             Dictionary with:
-            - is_geo_restricted: None (unknown)
-            - status_code: None
-            - accessible: False
-            - error: explanatory message
+            - is_geo_restricted: bool or None
+            - status_code: HTTP status code
+            - accessible: bool (True if 200, False otherwise)
+            - error: str or None
             - media_type: 'audio' or 'video' if detectable from metadata
         """
+        self.ensure_authenticated()
+
+        # Determine media type if available
         media_type = None
         if media_metadata and isinstance(media_metadata, dict):
             media_type = (
@@ -175,16 +179,173 @@ class EtbonAPI:
                 else None
             )
 
-        return {
-            "status_code": None,
-            "accessible": False,
-            "is_geo_restricted": None,
-            "error": (
-                "Geo-restriction check for ETB On is not implemented yet; "
-                "streaming endpoints need further reverse engineering."
-            ),
-            "media_type": media_type,
-        }
+        # Step 1: Get media metadata from API to check for CDN manifests
+        # This also catches API-level geo-restrictions
+        try:
+            api_response = self.session.get(
+                f"{self.base_url}/media/{slug}", timeout=10
+            )
+
+            # Check for API-level geo-restriction (HTTP 403)
+            if api_response.status_code == 403:
+                error_data = api_response.json()
+                if error_data.get("message") == "MEDIA_GEO_RESTRICTED_ACCESS":
+                    return {
+                        "status_code": 403,
+                        "accessible": False,
+                        "is_geo_restricted": True,
+                        "error": "Forbidden - Geo-restricted (API level)",
+                        "media_type": media_type or "video",
+                    }
+
+            # If API returns success, check for CDN manifests
+            if api_response.status_code == 200:
+                api_data = api_response.json()
+                manifests = api_data.get("manifests", [])
+
+                # Step 2: Check CDN-level geo-restriction for CDN manifests
+                # Some content returns 200 at API level but blocks at CDN with HTTP 451
+                for manifest in manifests:
+                    manifest_url = manifest.get("manifestURL", "")
+
+                    # Only check CDN manifests (not relative URLs)
+                    if manifest.get("type") == "dash" and manifest_url.startswith(
+                        "https://cdn"
+                    ):
+                        cdn_check = self._check_cdn_geo_restriction(manifest_url)
+                        if cdn_check is not None:
+                            return {
+                                "status_code": cdn_check["status_code"],
+                                "accessible": cdn_check["accessible"],
+                                "is_geo_restricted": cdn_check["is_geo_restricted"],
+                                "error": cdn_check["error"],
+                                "media_type": media_type or "video",
+                            }
+
+        except requests.exceptions.RequestException:
+            # If API check fails, fall through to standard manifest check
+            pass
+
+        # Step 3: Fallback to standard manifest URL test (same as primeran/makusi)
+        manifest_url = (
+            f"https://etbon.eus/manifests/{slug}/{language}/widevine/dash.mpd"
+        )
+
+        try:
+            response = self.session.get(manifest_url, timeout=10)
+            status_code = response.status_code
+
+            result = {
+                "status_code": status_code,
+                "accessible": status_code == 200,
+                "error": None,
+                "media_type": media_type or "video",
+            }
+
+            if status_code == 200:
+                result["is_geo_restricted"] = False
+            elif status_code == 403:
+                result["is_geo_restricted"] = True
+                result["error"] = "Forbidden - Geo-restricted"
+            elif status_code == 500:
+                # Server error - often indicates geo-restriction
+                result["is_geo_restricted"] = True
+                result["error"] = "Server error (500) - likely geo-restricted"
+            elif status_code == 404:
+                result["is_geo_restricted"] = None
+                result["error"] = "Not found - Content may not exist"
+            else:
+                result["is_geo_restricted"] = None
+                result["error"] = f"Unexpected status code: {status_code}"
+
+            return result
+
+        except requests.exceptions.RequestException as e:
+            return {
+                "status_code": None,
+                "accessible": False,
+                "is_geo_restricted": None,
+                "error": str(e),
+                "media_type": media_type or "video",
+            }
+
+    def _check_cdn_geo_restriction(
+        self, cdn_manifest_url: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Check CDN-level geo-restriction by testing media segments.
+
+        Some content (e.g., live TV recordings) may return 200 at the API level
+        but block actual media delivery with HTTP 451 at the CDN level.
+
+        Args:
+            cdn_manifest_url: Full CDN manifest URL (e.g., https://cdn1.etbon.eus/...)
+
+        Returns:
+            Dictionary with geo-restriction status, or None if check fails
+        """
+        try:
+            import xml.etree.ElementTree as ET
+
+            # Fetch the CDN manifest
+            manifest_response = self.session.get(cdn_manifest_url, timeout=5)
+
+            if manifest_response.status_code != 200:
+                # If manifest itself is blocked, it's geo-restricted
+                return {
+                    "status_code": manifest_response.status_code,
+                    "accessible": False,
+                    "is_geo_restricted": True,
+                    "error": f"CDN manifest blocked ({manifest_response.status_code})",
+                }
+
+            # Parse the DASH manifest to extract a media segment URL
+            root = ET.fromstring(manifest_response.content)
+            base_url = cdn_manifest_url.rsplit("/", 1)[0] + "/"
+
+            # Find first initialization segment
+            ns = {"mpd": "urn:mpeg:dash:schema:mpd:2011"}
+            for rep in root.findall(".//mpd:Representation", ns):
+                seg_template = rep.find(".//mpd:SegmentTemplate", ns)
+                if seg_template is not None:
+                    init_url = seg_template.get("initialization")
+                    if init_url:
+                        # Build full segment URL
+                        segment_url = base_url + init_url
+
+                        # Test the segment with HEAD request (no download)
+                        seg_response = self.session.head(segment_url, timeout=5)
+
+                        if seg_response.status_code == 451:
+                            # HTTP 451: Unavailable For Legal Reasons (geo-block)
+                            return {
+                                "status_code": 451,
+                                "accessible": False,
+                                "is_geo_restricted": True,
+                                "error": "Unavailable For Legal Reasons - Geo-restricted (CDN level)",
+                            }
+                        elif seg_response.status_code == 403:
+                            return {
+                                "status_code": 403,
+                                "accessible": False,
+                                "is_geo_restricted": True,
+                                "error": "Forbidden - Geo-restricted (CDN level)",
+                            }
+                        elif seg_response.status_code == 200:
+                            return {
+                                "status_code": 200,
+                                "accessible": True,
+                                "is_geo_restricted": False,
+                                "error": None,
+                            }
+                        # If we get other status codes, break and return None
+                        break
+
+        except Exception:
+            # If CDN check fails, return None to fall back to standard check
+            pass
+
+        return None
 
     # -------------------------------------------------------------------------
     # Series helpers
@@ -243,4 +404,118 @@ class EtbonAPI:
                 episodes.append(episode_info)
 
         return episodes
+
+    # -------------------------------------------------------------------------
+    # Live channels support
+    # -------------------------------------------------------------------------
+
+    def get_live_channels(self) -> List[Dict[str, Any]]:
+        """
+        Get list of all live channels from /api/v1/pages/zuzenekoak
+
+        Returns:
+            List of channel dictionaries with slug, title, type, etc.
+        """
+        self.ensure_authenticated()
+
+        try:
+            response = self.session.get(f"{self.base_url}/pages/zuzenekoak")
+            response.raise_for_status()
+            page_data = response.json()
+
+            channels: List[Dict[str, Any]] = []
+
+            # Recursively extract channels from children structure
+            def extract_channels(obj: Any):
+                if isinstance(obj, dict):
+                    # Check if this is a live channel
+                    if obj.get("type") == "live" and "slug" in obj:
+                        channel_info = {
+                            "slug": obj.get("slug"),
+                            "title": obj.get("title"),
+                            "type": "live",
+                            "is_fast_channel": obj.get("is_fast_channel", False),
+                        }
+                        # Include direct manifest URLs if available (for FAST channels)
+                        if "m3u8" in obj:
+                            channel_info["m3u8"] = obj.get("m3u8")
+                        if "mpd" in obj:
+                            channel_info["mpd"] = obj.get("mpd")
+                        channels.append(channel_info)
+
+                    # Recursively check nested structures
+                    for value in obj.values():
+                        extract_channels(value)
+                elif isinstance(obj, list):
+                    for item in obj:
+                        extract_channels(item)
+
+            extract_channels(page_data)
+            return channels
+
+        except requests.exceptions.RequestException as e:
+            # Return empty list if channels page is not accessible
+            return []
+
+    def check_channel_geo_restriction(self, slug: str) -> Dict[str, Any]:
+        """
+        Check if a live channel is geo-restricted using /api/v1/stream/{slug}
+
+        Args:
+            slug: Channel slug
+
+        Returns:
+            Dictionary with:
+            - is_geo_restricted: bool or None
+            - status_code: HTTP status code
+            - accessible: bool (True if 200, False otherwise)
+            - error: str or None
+        """
+        self.ensure_authenticated()
+
+        try:
+            response = self.session.get(f"{self.base_url}/stream/{slug}", timeout=10)
+            status_code = response.status_code
+
+            result = {
+                "status_code": status_code,
+                "accessible": status_code == 200,
+                "error": None,
+            }
+
+            if status_code == 200:
+                result["is_geo_restricted"] = False
+                # Optionally parse manifests from response
+                try:
+                    stream_data = response.json()
+                    result["manifests"] = stream_data.get("manifests", [])
+                except:
+                    pass
+            elif status_code == 403:
+                result["is_geo_restricted"] = True
+                # Try to get error message
+                try:
+                    error_data = response.json()
+                    if error_data.get("message") == "MEDIA_GEO_RESTRICTED_ACCESS":
+                        result["error"] = "Forbidden - Geo-restricted (channel)"
+                    else:
+                        result["error"] = f"Forbidden - {error_data.get('message', 'Unknown')}"
+                except:
+                    result["error"] = "Forbidden - Geo-restricted (channel)"
+            elif status_code == 404:
+                result["is_geo_restricted"] = None
+                result["error"] = "Not found - Channel may not exist"
+            else:
+                result["is_geo_restricted"] = None
+                result["error"] = f"Unexpected status code: {status_code}"
+
+            return result
+
+        except requests.exceptions.RequestException as e:
+            return {
+                "status_code": None,
+                "accessible": False,
+                "is_geo_restricted": None,
+                "error": str(e),
+            }
 

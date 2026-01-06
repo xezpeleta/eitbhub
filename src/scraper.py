@@ -10,18 +10,19 @@ import requests
 from typing import List, Dict, Any, Set, Optional, Union
 from .primeran_api import PrimeranAPI
 from .makusi_api import MakusiAPI
+from .etbon_api import EtbonAPI
 from .database import ContentDatabase
 
 
 class ContentScraper:
     """Scraper for discovering and checking content from EITB platforms"""
     
-    def __init__(self, api: Union[PrimeranAPI, MakusiAPI], db: ContentDatabase, delay: float = 0.5, disable_geo_check: bool = False):
+    def __init__(self, api: Union[PrimeranAPI, MakusiAPI, EtbonAPI], db: ContentDatabase, delay: float = 0.5, disable_geo_check: bool = False):
         """
         Initialize scraper
         
         Args:
-            api: API instance (PrimeranAPI or MakusiAPI)
+            api: API instance (PrimeranAPI, MakusiAPI or EtbonAPI)
             db: ContentDatabase instance
             delay: Delay between requests in seconds (to avoid rate limiting)
             disable_geo_check: If True, skip geo-restriction checks (useful when using VPN to update metadata)
@@ -46,7 +47,7 @@ class ContentScraper:
         
         Args:
             slug: Content slug
-            content_type: Content type (e.g., 'episode', 'vod')
+            content_type: Content type (e.g., 'episode', 'vod', 'live')
             series_slug: Series slug if episode
             
         Returns:
@@ -59,6 +60,15 @@ class ContentScraper:
                 return f"https://makusi.eus/ikusi/s/{slug}"
             else:
                 return f"https://makusi.eus/ikusi/m/{slug}"
+        elif self.platform == 'etbon.eus':
+            if content_type == 'live':
+                # Live channels use /ch/ pattern
+                return f"https://etbon.eus/ch/{slug}"
+            elif 'series' in content_type.lower():
+                return f"https://etbon.eus/s/{slug}"
+            else:
+                # ETB On uses /m/ for movies AND episodes
+                return f"https://etbon.eus/m/{slug}"
         else:
             # Primeran uses /m/ for all content
             return f"https://primeran.eus/m/{slug}"
@@ -153,37 +163,44 @@ class ContentScraper:
         try:
             # Method 1: Use search API with empty query to get all content (Primeran only)
             if self.platform == 'primeran.eus':
-            try:
-                response = self.api.session.get('https://primeran.eus/api/v1/search?q=')
-                if response.status_code == 200:
-                    search_data = response.json()
-                    self._sleep()
-                    if 'data' in search_data and isinstance(search_data['data'], list):
-                        for item in search_data['data']:
-                            if 'slug' in item:
-                                media_type = item.get('media_type', '').lower()
-                                collection = item.get('collection', '').lower()
-                                # Only include actual media items (not pages, collections, etc.)
-                                if media_type != 'series' and collection in ['media', 'vod', 'movie', 'documentary', 'concert']:
-                                    slugs.add(item['slug'])
-                        print(f"  Found {len(slugs)} items from search API")
-            except Exception as e:
-                print(f"  Search API failed: {e}")
+                try:
+                    response = self.api.session.get('https://primeran.eus/api/v1/search?q=')
+                    if response.status_code == 200:
+                        search_data = response.json()
+                        self._sleep()
+                        if 'data' in search_data and isinstance(search_data['data'], list):
+                            for item in search_data['data']:
+                                if 'slug' in item:
+                                    media_type = item.get('media_type', '').lower()
+                                    collection = item.get('collection', '').lower()
+                                    # Only include actual media items (not pages, collections, etc.)
+                                    if media_type != 'series' and collection in ['media', 'vod', 'movie', 'documentary', 'concert']:
+                                        slugs.add(item['slug'])
+                            print(f"  Found {len(slugs)} items from search API")
+                except Exception as e:
+                    print(f"  Search API failed: {e}")
             
             # Method 2: Parse category pages (Primeran only)
             if self.platform == 'primeran.eus':
-            categories = ['/telesailak', '/zinema', '/dokumentalak-p', '/generoak-musika']
-            for cat in categories:
-                try:
-                    response = self.api.session.get(f'https://primeran.eus/api/v1/pages{cat}')
-                    if response.status_code == 200:
-                        page_data = response.json()
-                        self._sleep()
-                        if 'children' in page_data:
-                            series_slugs = set()
-                            self._extract_slugs_from_children(page_data['children'], slugs, series_slugs)
-                except Exception as e:
-                    pass
+                categories = ['/telesailak', '/zinema', '/dokumentalak-p', '/generoak-musika']
+                for cat in categories:
+                    try:
+                        response = self.api.session.get(f'https://primeran.eus/api/v1/pages{cat}')
+                        if response.status_code == 200:
+                            page_data = response.json()
+                            self._sleep()
+                            if 'children' in page_data:
+                                tmp_series_slugs = set()
+                                self._extract_slugs_from_children(page_data['children'], slugs, tmp_series_slugs)
+                    except Exception as e:
+                        pass
+            
+            # Method 3: ETB On curated content
+            if self.platform == 'etbon.eus':
+                # Curated list for ETB On (initially hardcoded as per plan)
+                curated_media = ['7073_5182885942461937664', '7073_5182885942461937666']
+                for s in curated_media:
+                    slugs.add(s)
             
             # Method 3: Get home content (works for both platforms)
             try:
@@ -213,37 +230,44 @@ class ContentScraper:
         try:
             # Method 1: Use search API with empty query (Primeran only)
             if self.platform == 'primeran.eus':
-            try:
-                response = self.api.session.get('https://primeran.eus/api/v1/search?q=')
-                if response.status_code == 200:
-                    search_data = response.json()
-                    self._sleep()
-                    if 'data' in search_data and isinstance(search_data['data'], list):
-                        for item in search_data['data']:
-                            if 'slug' in item:
-                                media_type = item.get('media_type', '').lower()
-                                collection = item.get('collection', '').lower()
-                                # Only include actual series
-                                if media_type == 'series' or collection == 'series':
-                                    series_slugs.add(item['slug'])
-                        print(f"  Found {len(series_slugs)} series from search API")
-            except Exception as e:
-                print(f"  Search API failed: {e}")
+                try:
+                    response = self.api.session.get('https://primeran.eus/api/v1/search?q=')
+                    if response.status_code == 200:
+                        search_data = response.json()
+                        self._sleep()
+                        if 'data' in search_data and isinstance(search_data['data'], list):
+                            for item in search_data['data']:
+                                if 'slug' in item:
+                                    media_type = item.get('media_type', '').lower()
+                                    collection = item.get('collection', '').lower()
+                                    # Only include actual series
+                                    if media_type == 'series' or collection == 'series':
+                                        series_slugs.add(item['slug'])
+                            print(f"  Found {len(series_slugs)} series from search API")
+                except Exception as e:
+                    print(f"  Search API failed: {e}")
             
             # Method 2: Parse category pages (Primeran only)
             if self.platform == 'primeran.eus':
-            categories = ['/telesailak', '/zinema', '/dokumentalak-p']
-            for cat in categories:
-                try:
-                    response = self.api.session.get(f'https://primeran.eus/api/v1/pages{cat}')
-                    if response.status_code == 200:
-                        page_data = response.json()
-                        self._sleep()
-                        if 'children' in page_data:
-                            media_slugs = set()
-                            self._extract_slugs_from_children(page_data['children'], media_slugs, series_slugs)
-                except Exception as e:
-                    pass
+                categories = ['/telesailak', '/zinema', '/dokumentalak-p']
+                for cat in categories:
+                    try:
+                        response = self.api.session.get(f'https://primeran.eus/api/v1/pages{cat}')
+                        if response.status_code == 200:
+                            page_data = response.json()
+                            self._sleep()
+                            if 'children' in page_data:
+                                media_slugs = set()
+                                self._extract_slugs_from_children(page_data['children'], media_slugs, series_slugs)
+                    except Exception as e:
+                        pass
+            
+            # Method 3: ETB On curated content
+            if self.platform == 'etbon.eus':
+                # Curated series for ETB On
+                curated_series = ['7073_5182885942461937660']
+                for s in curated_series:
+                    series_slugs.add(s)
             
             # Method 3: Get home content (works for both platforms)
             try:
@@ -764,8 +788,8 @@ class ContentScraper:
                             # Pass episode_metadata so API can detect audio content
                             episode_meta_dict = episode_metadata if isinstance(episode_metadata, dict) else None
                             geo_check = self.api.check_geo_restriction(episode_slug, media_metadata=episode_meta_dict)
-                        self._sleep()
-                        
+                            self._sleep()
+                            
                             # Extract media_type from episode metadata
                             episode_media_type = None
                             if isinstance(episode_metadata, dict):
@@ -838,6 +862,114 @@ class ContentScraper:
             print(f"  Error checking series {series_slug}: {e}")
             self.stats['errors'] += 1
             return []
+    
+    def discover_channels(self) -> List[str]:
+        """
+        Discover live channel slugs (ETB On only)
+        
+        Returns:
+            List of channel slugs
+        """
+        if self.platform != 'etbon.eus':
+            # Only ETB On has live channels API
+            return []
+        
+        print("Discovering live channels...")
+        try:
+            channels = self.api.get_live_channels()
+            slugs = [ch['slug'] for ch in channels if 'slug' in ch]
+            print(f"  Found {len(slugs)} channels")
+            return slugs
+        except Exception as e:
+            print(f"  Error discovering channels: {e}")
+            return []
+    
+    def check_channel(self, slug: str) -> Optional[Dict[str, Any]]:
+        """
+        Check a single live channel for geo-restrictions
+        
+        Args:
+            slug: Channel slug
+            
+        Returns:
+            Content data dictionary with type='live' or None if error
+        """
+        print(f"  Checking channel: {slug}")
+        
+        try:
+            # Check geo-restriction for channel
+            if self.disable_geo_check:
+                print(f"    ℹ️  Geo-check disabled - fetching metadata only")
+                # Get existing status from DB if available
+                existing_status = self.db.get_content_status(slug, self.platform)
+                
+                # Minimal metadata for channels
+                metadata = {}
+                metadata = self._add_platform_url_to_metadata(metadata, slug, 'live')
+                
+                content_data = {
+                    'slug': slug,
+                    'platform': self.platform,
+                    'title': slug.replace('-', ' ').title(),  # Best guess from slug
+                    'type': 'live',
+                    'metadata': metadata
+                }
+                
+                # Preserve existing geo-restriction status
+                if existing_status:
+                    content_data['is_geo_restricted'] = existing_status['is_geo_restricted']
+                    content_data['restriction_type'] = existing_status['restriction_type']
+                else:
+                    content_data['is_geo_restricted'] = None
+                    content_data['restriction_type'] = None
+                
+                # Save to database
+                self.db.upsert_content(content_data)
+                self.stats['total_checked'] += 1
+                
+                return content_data
+            else:
+                # Normal flow - check geo-restriction
+                geo_check = self.api.check_channel_geo_restriction(slug)
+                self._sleep()
+                
+                restriction_type = f"stream_{geo_check.get('status_code')}"
+                
+                # Prepare content data
+                metadata = {}
+                metadata = self._add_platform_url_to_metadata(metadata, slug, 'live')
+                
+                # Add manifests if available
+                if 'manifests' in geo_check:
+                    metadata['manifests'] = geo_check['manifests']
+                
+                content_data = {
+                    'slug': slug,
+                    'platform': self.platform,
+                    'title': slug.replace('-', ' ').title(),  # Best guess from slug
+                    'type': 'live',
+                    'is_geo_restricted': geo_check.get('is_geo_restricted'),
+                    'restriction_type': restriction_type if geo_check.get('is_geo_restricted') is not None else None,
+                    'metadata': metadata
+                }
+                
+                # Save to database
+                self.db.upsert_content(content_data)
+                self.db.add_check_history(slug, geo_check)
+                
+                # Update stats
+                self.stats['total_checked'] += 1
+                if geo_check.get('is_geo_restricted') is True:
+                    self.stats['geo_restricted'] += 1
+                elif geo_check.get('is_geo_restricted') is False:
+                    self.stats['accessible'] += 1
+                
+                return content_data
+                
+        except Exception as e:
+            print(f"    ✗ Error checking channel {slug}: {e}")
+            self.stats['errors'] += 1
+            return None
     
     def _create_series_record(self, series_slug: str, series_metadata: Dict[str, Any], episodes: List[Dict[str, Any]]) -> None:
         """
@@ -915,13 +1047,15 @@ class ContentScraper:
     def scrape_all(self, 
                    media_slugs: List[str] = None,
                    series_slugs: List[str] = None,
-                   limit: Optional[int] = None):
+                   limit: Optional[int] = None,
+                   check_channels: bool = False):
         """
         Scrape all content
         
         Args:
             media_slugs: Optional list of media slugs to check
             series_slugs: Optional list of series slugs to check
+            check_channels: If True, also scrape live channels (ETB On only)
         """
         print("=" * 80)
         print(f"Starting {self.platform} Content Scraper")
@@ -963,6 +1097,18 @@ class ContentScraper:
                 if slug not in self.discovered_slugs:
                     self.check_series(slug)
                     self.discovered_slugs.add(slug)
+        
+        # Step 4: Check channels if requested (ETB On only)
+        if check_channels and self.platform == 'etbon.eus':
+            print("\n[Step 4] Checking live channels...")
+            channel_slugs = self.discover_channels()
+            
+            if limit and len(channel_slugs) > limit:
+                channel_slugs = channel_slugs[:limit]
+                print(f"  Limited to {limit} channels")
+            
+            for slug in channel_slugs:
+                self.check_channel(slug)
         
         # Print summary
         print("\n" + "=" * 80)

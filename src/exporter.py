@@ -188,6 +188,15 @@ class JSONExporter:
             else:
                 # Regular media
                 return f"https://makusi.eus/ikusi/m/{slug}"
+        elif platform == 'etbon.eus':
+            if content_type == 'live':
+                # Live channels use /ch/ pattern
+                return f"https://etbon.eus/ch/{slug}"
+            elif 'series' in content_type.lower():
+                return f"https://etbon.eus/s/{slug}"
+            else:
+                # ETB On uses /m/ for movies AND episodes
+                return f"https://etbon.eus/m/{slug}"
         else:
             # Primeran uses /m/ for all content
             return f"https://primeran.eus/m/{slug}"

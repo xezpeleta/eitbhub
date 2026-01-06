@@ -1,13 +1,15 @@
 {
-  "export_date": "2026-01-06T11:07:35.414309",
+  "export_date": "2026-01-06T13:07:53.619386",
   "statistics": {
-    "total_content": 11346,
+    "total_content": 12161,
     "by_type": {
-      "episode": 10735,
-      "series": 145,
-      "vod": 466
+      "episode": 11502,
+      "series": 168,
+      "unknown": 7,
+      "vod": 484
     },
     "by_platform": {
+      "etbon.eus": 836,
       "makusi.eus": 6079,
       "primeran.eus": 6294
     },
@@ -57,56 +59,62 @@
       "2010": 126,
       "2011": 160,
       "2012": 190,
-      "2013": 163,
+      "2013": 164,
       "2014": 183,
       "2015": 151,
       "2016": 100,
-      "2017": 210,
+      "2017": 211,
       "2018": 188,
-      "2019": 181,
+      "2019": 183,
       "2020": 117,
-      "2021": 258,
-      "2022": 318,
-      "2023": 320,
-      "2024": 743,
-      "2025": 545,
+      "2021": 285,
+      "2022": 439,
+      "2023": 414,
+      "2024": 967,
+      "2025": 834,
       "2026": 2
     },
     "by_age_rating": {
-      "D": 4225,
+      "D": 4983,
       "0-4": 2455,
       "5-7": 1873,
       "+8": 1714,
-      "+12": 589,
-      "+16": 227,
-      "+7": 184,
+      "+12": 601,
+      "+16": 235,
+      "+7": 194,
       "+18": 77,
+      "Unknown": 25,
+      "TP": 2,
       "Kalifikatu gabe": 1,
       "H": 1
     },
     "by_language": {
-      "eu": 10873,
+      "eu": 11115,
+      "es": 892,
       "vo": 822,
-      "es": 365,
       "en": 78,
+      "au": 22,
       "un": 21,
-      "au": 20,
       "fr": 14
     },
     "geo_restricted_by_platform": {
+      "etbon.eus": {
+        "restricted": 26,
+        "accessible": 302
+      },
       "makusi.eus": {
         "restricted": 4328,
-        "accessible": 1606
+        "accessible": 1605
       },
       "primeran.eus": {
         "restricted": 1503,
-        "accessible": 4791
+        "accessible": 4788
       }
     },
-    "geo_restricted_count": 4979,
-    "accessible_count": 6222,
-    "unknown_count": 145,
-    "geo_restricted_percentage": 43.883306892296844,
-    "last_check": "2026-01-06T02:48:32.534017"
+    "geo_restricted_count": 5003,
+    "accessible_count": 6505,
+    "unknown_count": 653,
+    "geo_restricted_percentage": 41.13970890551764,
+    "last_check": "2026-01-06T13:02:22.368790"
   }
 }

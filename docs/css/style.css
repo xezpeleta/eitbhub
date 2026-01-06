@@ -559,6 +559,11 @@ tbody tr:hover {
     color: #000000;
 }
 
+.platform-badge-etbon {
+    background: #FF5722;
+    color: #ffffff;
+}
+
 /* Content Link */
 .content-link {
     color: var(--text-color);
