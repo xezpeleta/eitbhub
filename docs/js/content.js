@@ -177,7 +177,15 @@ function populateFilters() {
 // Populate type filter dropdown
 function populateTypeFilter() {
     const typeFilter = document.getElementById('type-filter');
-    const types = [...new Set(allContent.map(item => item.type).filter(Boolean))].sort();
+    // Collect distinct types from content. We intentionally hide the synthetic
+    // "series" type from the Mota (Type) dropdown because series are represented
+    // as grouped episode rows in the UI, not as standalone items that can be
+    // directly filtered by type.
+    const types = [...new Set(
+        allContent
+            .map(item => item.type)
+            .filter(type => type && type !== 'series')
+    )].sort();
     
     types.forEach(type => {
         const option = document.createElement('option');
