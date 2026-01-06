@@ -881,17 +881,22 @@ function renderDetailRow(item, isEpisode) {
         }
     }
 
-    // Meta info: year, duration, age_rating, media_type, available_until, access_restriction
+    // Meta info: year, duration, age_rating, media_type
     const metaParts = [];
     if (item.year) metaParts.push(`${escapeHtml(String(item.year))}`);
     if (item.duration) metaParts.push(formatDuration(item.duration));
     if (item.age_rating) metaParts.push(escapeHtml(item.age_rating));
     if (item.media_type) metaParts.push(escapeHtml(item.media_type));
-    if (item.available_until) metaParts.push(`Eskuragarri: ${escapeHtml(item.available_until)}`);
-    if (item.access_restriction) metaParts.push(escapeHtml(item.access_restriction));
     const metaLine = metaParts.length > 0
         ? `<div class="detail-meta-line">${metaParts.join(' · ')}</div>`
         : '';
+
+    // Availability (date only)
+    let availableLine = '';
+    if (item.available_until) {
+        const availableDate = String(item.available_until).split('T')[0] || String(item.available_until);
+        availableLine = `<div class="detail-meta-line detail-available">Noiz arte: ${escapeHtml(availableDate)}</div>`;
+    }
 
     // Languages
     let languagesHtml = '';
@@ -954,6 +959,7 @@ function renderDetailRow(item, isEpisode) {
                     <div class="detail-content">
                         ${episodeInfo}
                         ${metaLine}
+                        ${availableLine}
                         ${languagesHtml}
                         ${genresHtml}
                         ${platformLine}
