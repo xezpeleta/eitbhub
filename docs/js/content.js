@@ -3,6 +3,9 @@ let allContent = [];
 let groupedContent = { series: [], standalone: [] };
 let filteredGroupedContent = { series: [], standalone: [] };
 let expandedSeries = new Set();
+// Track which individual item (by slug) has its detail row expanded.
+// We keep this as a Set for simplicity, but enforce a single active slug.
+let expandedRows = new Set();
 let currentSort = { field: null, direction: 'asc' };
 
 // Pagination state
@@ -537,11 +540,21 @@ function renderTable() {
     
     pageRows.forEach(row => {
         if (row.type === 'standalone') {
-            html += renderContentRow(row.item, false, false);
+            const item = row.item;
+            const isExpanded = expandedRows.has(item.slug);
+            html += renderContentRow(item, false, isExpanded);
+            if (isExpanded) {
+                html += renderDetailRow(item, false);
+            }
         } else if (row.type === 'series') {
             html += renderSeriesRow(row.series, row.isExpanded);
         } else if (row.type === 'episode') {
-            html += renderContentRow(row.item, true, row.isExpanded);
+            const item = row.item;
+            const isExpanded = expandedRows.has(item.slug);
+            html += renderContentRow(item, true, isExpanded);
+            if (isExpanded) {
+                html += renderDetailRow(item, true);
+            }
         }
     });
     
@@ -553,6 +566,25 @@ function renderTable() {
             e.stopPropagation();
             const seriesSlug = button.getAttribute('data-series-slug');
             toggleSeriesExpansion(seriesSlug);
+        });
+    });
+
+    // Attach click handlers to data rows to toggle detail expansion
+    document.querySelectorAll('tr[data-slug]').forEach(rowEl => {
+        rowEl.addEventListener('click', () => {
+            const slug = rowEl.getAttribute('data-slug');
+            if (!slug) return;
+
+            // Clicking an already expanded row collapses it.
+            // Clicking a different row collapses any other and expands this one.
+            if (expandedRows.has(slug)) {
+                expandedRows.clear();
+            } else {
+                expandedRows.clear();
+                expandedRows.add(slug);
+            }
+
+            renderTable();
         });
     });
 
@@ -729,7 +761,7 @@ function renderContentRow(item, isEpisode, isExpanded) {
     // 1. Empty (expand button), 2. Image, 3. Title, 4. Type, 5. Age, 6. Languages,
     // 7. Duration, 8. Year, 9. Geo-Restriction, 10. Platform (LAST)
     return `
-        <tr class="${rowClass}" style="${indentStyle}">
+        <tr class="${rowClass}" style="${indentStyle}" data-slug="${escapeHtml(item.slug || '')}">
             <td></td>
             <td class="thumbnail-cell">${thumbnailHtml}</td>
             <td>${titleHtml}</td>
@@ -740,6 +772,124 @@ function renderContentRow(item, isEpisode, isExpanded) {
             <td>${item.year || '-'}</td>
             <td>${restrictedStatus !== '-' ? `<span class="status-badge ${statusClass}">${restrictedStatus}</span>` : '-'}</td>
             <td>${platformDisplay}</td>
+        </tr>
+    `;
+}
+
+// Render detail row shown when a content row is expanded
+function renderDetailRow(item, isEpisode) {
+    const description = item.description || '';
+    const hasDescription = description && description.trim().length > 0;
+
+    // Large poster image (reuse thumbnail, but allow it to be bigger)
+    let posterHtml = '';
+    if (item.thumbnail) {
+        posterHtml = `<img src="${escapeHtml(item.thumbnail)}" alt="${escapeHtml(item.title || '')}" class="detail-poster" loading="lazy" onerror="this.style.display='none'">`;
+    }
+
+    // Series / episode info
+    let episodeInfo = '';
+    if (isEpisode) {
+        const parts = [];
+        if (item.series_title) {
+            parts.push(escapeHtml(item.series_title));
+        }
+        const se = [];
+        if (item.season_number != null) {
+            se.push(`${escapeHtml(String(item.season_number))}. denboraldia`);
+        }
+        if (item.episode_number != null) {
+            se.push(`${escapeHtml(String(item.episode_number))}. atala`);
+        }
+        if (se.length > 0) {
+            parts.push(se.join(' · '));
+        }
+        if (parts.length > 0) {
+            episodeInfo = `<div class="detail-meta-line detail-episode-info">${parts.join(' — ')}</div>`;
+        }
+    }
+
+    // Meta info: year, duration, age_rating, media_type, available_until, access_restriction
+    const metaParts = [];
+    if (item.year) metaParts.push(`${escapeHtml(String(item.year))}`);
+    if (item.duration) metaParts.push(formatDuration(item.duration));
+    if (item.age_rating) metaParts.push(escapeHtml(item.age_rating));
+    if (item.media_type) metaParts.push(escapeHtml(item.media_type));
+    if (item.available_until) metaParts.push(`Eskuragarri: ${escapeHtml(item.available_until)}`);
+    if (item.access_restriction) metaParts.push(escapeHtml(item.access_restriction));
+    const metaLine = metaParts.length > 0
+        ? `<div class="detail-meta-line">${metaParts.join(' · ')}</div>`
+        : '';
+
+    // Languages
+    let languagesHtml = '';
+    if (item.languages && Array.isArray(item.languages) && item.languages.length > 0) {
+        languagesHtml = item.languages.map(lang =>
+            `<span class="language-badge">${escapeHtml(lang.toUpperCase())}</span>`
+        ).join(' ');
+        languagesHtml = `<div class="detail-meta-line">${languagesHtml}</div>`;
+    }
+
+    // Genres
+    let genresHtml = '';
+    if (item.genres && Array.isArray(item.genres) && item.genres.length > 0) {
+        genresHtml = `<div class="detail-meta-line detail-genres">${item.genres.map(g => escapeHtml(g)).join(', ')}</div>`;
+    }
+
+    // Platforms (reuse platform badges)
+    let itemPlatforms = [];
+    if (item.platform !== undefined && item.platform !== null) {
+        if (Array.isArray(item.platform)) {
+            itemPlatforms = item.platform;
+        } else if (typeof item.platform === 'string') {
+            try {
+                const parsed = JSON.parse(item.platform);
+                itemPlatforms = Array.isArray(parsed) ? parsed : [item.platform];
+            } catch {
+                itemPlatforms = [item.platform];
+            }
+        }
+    }
+    if (!Array.isArray(itemPlatforms)) {
+        itemPlatforms = [];
+    }
+    const platformDisplay = renderPlatformBadges(itemPlatforms) || '-';
+    const platformLine = `<div class="detail-meta-line detail-platforms">${platformDisplay}</div>`;
+
+    // Content URL (explicit link if available)
+    let linkHtml = '';
+    if (item.content_url) {
+        const linkTitle = (item.title != null && item.title !== '') ? item.title :
+                          (item.slug != null && item.slug !== '') ? item.slug : '';
+        linkHtml = `
+            <div class="detail-meta-line">
+                <a href="${escapeHtml(item.content_url)}" target="_blank" class="content-link" onclick="event.stopPropagation();" title="${escapeHtml(linkTitle)}">
+                    Ireki edukia platforman <span class="external-link-icon">↗</span>
+                </a>
+            </div>
+        `;
+    }
+
+    const descriptionHtml = hasDescription
+        ? `<p class="detail-description">${escapeHtml(description)}</p>`
+        : '';
+
+    return `
+        <tr class="detail-row">
+            <td colspan="10">
+                <div class="detail-container">
+                    ${posterHtml ? `<div class="detail-poster-wrapper">${posterHtml}</div>` : ''}
+                    <div class="detail-content">
+                        ${episodeInfo}
+                        ${metaLine}
+                        ${languagesHtml}
+                        ${genresHtml}
+                        ${platformLine}
+                        ${linkHtml}
+                        ${descriptionHtml}
+                    </div>
+                </div>
+            </td>
         </tr>
     `;
 }
