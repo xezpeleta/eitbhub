@@ -7,7 +7,7 @@
 - **Primeran Platform**: Complete
   - ✅ API documentation
   - ✅ Geo-restriction checker
-  - ✅ Web dashboard
+  - ✅ EITBHub web UI
   - ✅ Content discovery and database storage
 
 ### ⏳ Planned
@@ -36,7 +36,7 @@ The project is structured to support multiple platforms:
 - **Shared methodology**: `METHODOLOGY.md`
 - **Unified scraper**: `run_scraper.py` with `--platform` flag
 - **Multi-platform database**: SQLite with platform identification
-- **Unified dashboard**: Web interface supporting all platforms
+- **Unified EITBHub UI**: Web interface supporting all platforms
 
 ---
 

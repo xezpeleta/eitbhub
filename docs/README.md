@@ -1,17 +1,17 @@
-# Primeran Geo-Restriction Checker - Static Website
+# EITBHub – Primeran Geo-Restriction Web UI
 
 This directory contains the static website that displays geo-restriction data from Primeran.eus.
 
 ## Structure
 
 ```
-dashboard/
-├── index.html          # Main dashboard with statistics
+docs/
+├── index.html          # EITBHub statistics and overview
 ├── content.html        # Filterable content list
 ├── css/
 │   └── style.css      # Styling
 ├── js/
-│   ├── dashboard.js   # Dashboard logic and charts
+│   ├── dashboard.js   # EITBHub logic and charts
 │   └── content.js     # Content list filtering/sorting
 └── data/
     ├── content.json           # Full content list (generated)
@@ -26,7 +26,7 @@ Due to browser CORS restrictions, you cannot open the HTML files directly with `
 ### Option 1: Python HTTP Server
 
 ```bash
-cd dashboard
+cd docs
 python3 -m http.server 8000
 # Then open http://localhost:8000 in your browser
 ```
@@ -34,7 +34,7 @@ python3 -m http.server 8000
 ### Option 2: Using uv (as per project preferences)
 
 ```bash
-cd dashboard
+cd docs
 uv run python -m http.server 8000
 # Then open http://localhost:8000 in your browser
 ```
@@ -42,7 +42,7 @@ uv run python -m http.server 8000
 ### Option 3: Node.js HTTP Server
 
 ```bash
-cd dashboard
+cd docs
 npx http-server -p 8000
 # Then open http://localhost:8000 in your browser
 ```
@@ -57,15 +57,15 @@ python run_scraper.py --test  # Test mode (20 items)
 python run_scraper.py        # Full scrape (all content)
 ```
 
-The scraper will automatically update the JSON files in `dashboard/data/`.
+The scraper will automatically update the JSON files in `docs/data/`.
 
 ## Deployment
 
 This website is designed to be deployed on **GitHub Pages**:
 
-1. Push the `dashboard/` folder to your repository
+1. Push the `docs/` folder to your repository
 2. Enable GitHub Pages in repository settings
-3. Set source to `/dashboard` folder
+3. Set source to `/docs` folder
 4. The website will be available at `https://username.github.io/repo-name/`
 
 ## Features

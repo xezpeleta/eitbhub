@@ -393,7 +393,7 @@ For content that returns `403 Forbidden` at the API level (e.g., `/api/v1/media/
 
 ## Metadata vs. Exported JSON
 
-**Important**: The full `metadata` JSON blob is only stored in the SQLite database. The exported JSON files (`dashboard/data/content.json`) contain a **subset** of fields for performance reasons:
+**Important**: The full `metadata` JSON blob is only stored in the SQLite database. The exported JSON files (`docs/data/content.json`) contain a **subset** of fields for performance reasons:
 
 **Exported Fields:**
 - `slug`, `title`, `type`

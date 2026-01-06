@@ -262,7 +262,7 @@ class JSONExporter:
     
     def export_statistics_only(self) -> Dict[str, Any]:
         """
-        Export only statistics (lighter file for dashboard)
+        Export only statistics (lighter JSON file for the EITBHub web UI)
         
         Returns:
             Dictionary with statistics

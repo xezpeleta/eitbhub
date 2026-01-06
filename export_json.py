@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick script to regenerate dashboard JSON files from existing database
+Quick script to regenerate EITBHub JSON data files from the existing database
 """
 
 import sys

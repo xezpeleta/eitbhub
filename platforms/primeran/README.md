@@ -74,7 +74,7 @@ See [API.md](API.md) for complete API reference including:
 - ✅ Automated geo-restriction detection
 - ✅ Content discovery (media + series)
 - ✅ SQLite database storage
-- ✅ Web dashboard visualization
+- ✅ EITBHub web UI visualization
 
 ---
 

@@ -20,7 +20,7 @@ Many content items on EITB streaming platforms are not available in Northern Bas
 This project consists of two main components:
 
 1. **API Documentation** - Complete reverse-engineered API documentation for each platform
-2. **Geo-Restriction Checker** - Automated tool to identify geo-restricted content with a web dashboard
+2. **Geo-Restriction Checker** - Automated tool to identify geo-restricted content with the EITBHub web UI
 
 ### Current Statistics (Primeran - 2026-01-04)
 
@@ -63,9 +63,14 @@ This project consists of two main components:
    uv run python run_scraper.py --platform primeran --series-slug lau-hankan
    ```
 
-4. **View the dashboard**:
+4. **Regenerate EITBHub JSON data** (from existing database):
    ```bash
-   cd dashboard
+   uv run python export_json.py
+   ```
+
+5. **Open the EITBHub web UI**:
+   ```bash
+   cd docs
    python3 -m http.server 8000
    # Open http://localhost:8000 in your browser
    ```
@@ -106,7 +111,7 @@ Each platform has its own documentation in the `platforms/` directory:
 ✅ **Automated Content Discovery** - Discovers all media and series  
 ✅ **Geo-Restriction Detection** - Identifies restricted content via manifest checks  
 ✅ **SQLite Database** - Stores all content metadata and restriction status  
-✅ **Web Dashboard** - Interactive dashboard with statistics and visualizations  
+✅ **EITBHub web UI** - Interactive interface with statistics and visualizations  
 ✅ **Filterable Content List** - Search, filter, and sort all discovered content  
 ✅ **Multi-Platform Support** - Architecture ready for multiple platforms  
 
@@ -129,7 +134,7 @@ eitbhub/
 │   ├── primeran_api.py    # Primeran API client
 │   ├── database.py        # SQLite database operations
 │   ├── scraper.py         # Content discovery & checking
-│   └── exporter.py        # JSON export for dashboard
+│   └── exporter.py        # JSON export for EITBHub web UI
 ├── platforms/              # Platform-specific documentation
 │   ├── primeran/
 │   │   ├── API.md        # Complete API documentation
@@ -137,7 +142,7 @@ eitbhub/
 │   ├── makusi/           # Coming soon
 │   ├── guau/             # Coming soon
 │   └── etbon/            # Coming soon
-├── dashboard/             # Web dashboard
+├── docs/                  # EITBHub web UI
 │   ├── index.html         # Dashboard
 │   ├── content.html       # Content list
 │   ├── css/               # Styles
