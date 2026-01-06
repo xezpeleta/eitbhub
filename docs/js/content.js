@@ -6,6 +6,17 @@ let expandedSeries = new Set();
 // Track which individual item (by slug) has its detail row expanded.
 // We keep this as a Set for simplicity, but enforce a single active slug.
 let expandedRows = new Set();
+
+// Attempt to infer season number from a title prefix like "D7: 1. Tartaldea"
+function inferSeasonFromTitle(title) {
+    if (!title) return null;
+    const match = String(title).trim().match(/^D\s*([0-9]+)/i);
+    if (match && match[1]) {
+        const num = parseInt(match[1], 10);
+        return isNaN(num) ? null : num;
+    }
+    return null;
+}
 let currentSort = { field: null, direction: 'asc' };
 
 // Pagination state
@@ -166,6 +177,43 @@ function groupContentBySeries() {
         series: Array.from(seriesMap.values()),
         standalone: standalone
     };
+
+    // Enrich series with season ordering and computed season_display for episodes
+    groupedContent.series.forEach(series => {
+        // Build a stable season order: smallest season_number -> Season 1, etc.
+        const seasonNumbers = Array.from(
+            new Set(
+                series.episodes
+                    .map(ep => {
+                        if (ep.season_number !== null && ep.season_number !== undefined) {
+                            return ep.season_number;
+                        }
+                        // Fallback: try to infer from title
+                        const inferred = inferSeasonFromTitle(ep.title);
+                        return inferred !== null && inferred !== undefined ? inferred : null;
+                    })
+                    .filter(n => n !== null && n !== undefined)
+            )
+        ).sort((a, b) => a - b);
+
+        const seasonOrderMap = {};
+        seasonNumbers.forEach((num, idx) => {
+            seasonOrderMap[num] = idx + 1;
+        });
+        series.season_order_map = seasonOrderMap;
+
+        // Attach a season_display to each episode (preferred: mapped order; fallback: title prefix)
+        series.episodes.forEach(ep => {
+            if (ep.season_number != null && seasonOrderMap[ep.season_number]) {
+                ep.season_display = seasonOrderMap[ep.season_number];
+            } else {
+                const inferred = inferSeasonFromTitle(ep.title);
+                if (inferred != null) {
+                    ep.season_display = inferred;
+                }
+            }
+        });
+    });
 }
 
 // Populate all filter dropdowns
@@ -795,8 +843,19 @@ function renderDetailRow(item, isEpisode) {
             parts.push(escapeHtml(item.series_title));
         }
         const se = [];
-        if (item.season_number != null) {
-            se.push(`${escapeHtml(String(item.season_number))}. denboraldia`);
+        // Prefer computed season_display; fallback to raw season_number; last resort infer from title
+        let seasonDisplay = item.season_display;
+        if (seasonDisplay == null && item.season_number != null) {
+            seasonDisplay = item.season_number;
+        }
+        if (seasonDisplay == null) {
+            const inferredSeason = inferSeasonFromTitle(item.title);
+            if (inferredSeason != null) {
+                seasonDisplay = inferredSeason;
+            }
+        }
+        if (seasonDisplay != null) {
+            se.push(`${escapeHtml(String(seasonDisplay))}. denboraldia`);
         }
         if (item.episode_number != null) {
             se.push(`${escapeHtml(String(item.episode_number))}. atala`);
