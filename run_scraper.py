@@ -35,6 +35,8 @@ def main():
                         help='Also scrape live channels (ETB On only)')
     parser.add_argument('--geo-restricted-only', action='store_true',
                         help='Only update geo-restricted content (use with --disable-geo-check)')
+    parser.add_argument('--new-only', '-n', action='store_true',
+                        help='Only scrape content not present in the database')
     
     args = parser.parse_args()
     
@@ -58,7 +60,7 @@ def main():
         db = ContentDatabase(args.db)
         print("✓ Database ready")
         
-        scraper = ContentScraper(api, db, delay=args.delay, disable_geo_check=args.disable_geo_check)
+        scraper = ContentScraper(api, db, delay=args.delay, disable_geo_check=args.disable_geo_check, new_only=args.new_only)
         exporter = JSONExporter(db, args.output_dir)
         
         if args.disable_geo_check:

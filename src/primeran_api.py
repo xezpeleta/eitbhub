@@ -116,13 +116,14 @@ class PrimeranAPI:
         response.raise_for_status()
         return response.json()
     
-    def check_geo_restriction(self, slug: str, language: str = 'eu') -> Dict[str, Any]:
+    def check_geo_restriction(self, slug: str, language: str = 'eu', media_metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Check if content is geo-restricted by testing manifest URL
         
         Args:
             slug: Content slug (episode slug for series, media slug for individual content)
             language: Language code (default: 'eu' for Euskara)
+            media_metadata: Optional media metadata (unused in Primeran but kept for consistency)
             
         Returns:
             Dictionary with:

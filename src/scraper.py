@@ -17,7 +17,7 @@ from .database import ContentDatabase
 class ContentScraper:
     """Scraper for discovering and checking content from EITB platforms"""
     
-    def __init__(self, api: Union[PrimeranAPI, MakusiAPI, EtbonAPI], db: ContentDatabase, delay: float = 0.5, disable_geo_check: bool = False):
+    def __init__(self, api: Union[PrimeranAPI, MakusiAPI, EtbonAPI], db: ContentDatabase, delay: float = 0.5, disable_geo_check: bool = False, new_only: bool = False):
         """
         Initialize scraper
         
@@ -26,11 +26,13 @@ class ContentScraper:
             db: ContentDatabase instance
             delay: Delay between requests in seconds (to avoid rate limiting)
             disable_geo_check: If True, skip geo-restriction checks (useful when using VPN to update metadata)
+            new_only: If True, only scrape content not present in the database
         """
         self.api = api
         self.db = db
         self.delay = delay
         self.disable_geo_check = disable_geo_check
+        self.new_only = new_only
         self.platform = api.platform  # Get platform from API object
         self.discovered_slugs: Set[str] = set()
         self.stats = {
@@ -658,6 +660,25 @@ class ContentScraper:
             
             for episode in episodes:
                 episode_slug = episode['episode_slug']
+
+                # If new_only is enabled, check if episode exists in database (and has geo-restriction info)
+                if self.new_only:
+                    status = self.db.get_content_status(episode_slug, self.platform)
+                    if status and status.get('is_geo_restricted') is not None:
+                        # Episode exists and has been checked - skip detailed processing
+                        # But add to episode_data_list so we can calculate series stats
+                        try:
+                            # We need minimal data for the list
+                            content = self.db.get_content(episode_slug, self.platform)
+                            if content:
+                                print(f"    ℹ️  Skipping existing episode: {episode_slug}")
+                                episode_data_list.append(content)
+                                self.stats['total_discovered'] += 1 # Count as discovered but not checked
+                                continue
+                        except Exception:
+                            # If DB fetch fails, just proceed to check it
+                            pass
+
                 print(f"    Checking episode: {episode_slug}")
                 
                 try:
@@ -811,7 +832,7 @@ class ContentScraper:
                                     print(f"      ⚠️  Manifest check returned None but status_code={status_code}, treating as geo-restricted")
                                 else:
                                     # For other cases (404, network errors, etc.), log warning but keep as None
-                                print(f"      ⚠️  Geo-restriction status unclear for {episode_slug}: {geo_check.get('error', 'Unknown error')}")
+                                    print(f"      ⚠️  Geo-restriction status unclear for {episode_slug}: {geo_check.get('error', 'Unknown error')}")
                         
                             # Prepare content data
                             # Add platform URL to metadata
@@ -895,6 +916,13 @@ class ContentScraper:
             Content data dictionary with type='live' or None if error
         """
         print(f"  Checking channel: {slug}")
+        
+        # If new_only is enabled, check if channel exists
+        if self.new_only:
+            status = self.db.get_content_status(slug, self.platform)
+            if status:
+                print(f"    ℹ️  Skipping existing channel: {slug}")
+                return None
         
         try:
             # Check geo-restriction for channel
@@ -1087,6 +1115,14 @@ class ContentScraper:
             print(f"\n[Step 3] Checking {len(media_slugs)} media items...")
             for slug in media_slugs:
                 if slug not in self.discovered_slugs:
+                    # If new_only is enabled, check if media exists
+                    if self.new_only:
+                        status = self.db.get_content_status(slug, self.platform)
+                        if status:
+                            print(f"  ℹ️  Skipping existing media: {slug}")
+                            self.discovered_slugs.add(slug)
+                            continue
+                            
                     self.check_media(slug)
                     self.discovered_slugs.add(slug)
         
@@ -1095,6 +1131,8 @@ class ContentScraper:
             print(f"\n[Step 4] Checking {len(series_slugs)} series...")
             for slug in series_slugs:
                 if slug not in self.discovered_slugs:
+                    # For series, we don't skip the series check entirely because there might be new episodes.
+                    # The check_series method handles skipping existing episodes internally.
                     self.check_series(slug)
                     self.discovered_slugs.add(slug)
         

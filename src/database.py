@@ -483,6 +483,49 @@ class ContentDatabase:
         
         return [dict(row) for row in rows]
     
+    def yield_all_content(self, 
+                       content_type: Optional[str] = None,
+                       geo_restricted_only: bool = False,
+                       platform: Optional[str] = None) -> Any:
+        """
+        Yield all content one by one (memory efficient)
+        
+        Args:
+            content_type: Filter by type
+            geo_restricted_only: Only return geo-restricted content
+            platform: Filter by platform
+            
+        Yields:
+            Content dictionary
+        """
+        cursor = self.conn.cursor()
+        
+        query = "SELECT * FROM content WHERE 1=1"
+        params = []
+        
+        if content_type:
+            query += " AND type = ?"
+            params.append(content_type)
+        
+        if geo_restricted_only:
+            query += " AND is_geo_restricted = 1"
+        
+        if platform:
+            query += " AND EXISTS (SELECT 1 FROM json_each(platform) WHERE value = ?)"
+            params.append(platform)
+        
+        query += " ORDER BY title"
+        
+        # Use simple execution which yields rows in standard DBAPI
+        cursor.execute(query, params)
+        
+        while True:
+            rows = cursor.fetchmany(1000)
+            if not rows:
+                break
+            for row in rows:
+                yield dict(row)
+    
     def get_statistics(self, platform: Optional[str] = None) -> Dict[str, Any]:
         """
         Get database statistics
@@ -560,7 +603,9 @@ class ContentDatabase:
         # By language code (parsed in Python from metadata to be robust against malformed JSON)
         language_counts: Dict[str, int] = {}
         cursor.execute("SELECT metadata FROM content")
-        for (metadata_str,) in cursor.fetchall():
+        
+        # Iterate cursor instead of fetchall() to avoid loading all metadata into memory
+        for (metadata_str,) in cursor:
             if not metadata_str:
                 continue
             try:

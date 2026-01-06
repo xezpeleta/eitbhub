@@ -203,70 +203,92 @@ class JSONExporter:
     
     def export_all(self) -> Dict[str, Any]:
         """
-        Export all content to JSON
+        Export all content to JSON using streaming to avoid memory issues
         
         Returns:
             Dictionary with export metadata
         """
-        print("Exporting content to JSON...")
+        print("Exporting content to JSON (streaming mode)...")
         
-        # Get all content
-        all_content = self.db.get_all_content()
-        
-        # Get statistics
+        # Get statistics first
         stats = self.db.get_statistics()
         
-        # Prepare export data
-        export_data = {
-            'export_date': datetime.now().isoformat(),
-            'statistics': stats,
-            'content': []
-        }
-        
-        # Add content items
-        for item in all_content:
-            # Convert to JSON-serializable format
-            content_item = {
-                'slug': item['slug'],
-                'title': item['title'],
-                'type': item['type'],
-                'duration': item['duration'],
-                'year': item['year'],
-                'genres': json.loads(item['genres']) if item['genres'] else [],
-                'series_slug': item['series_slug'],
-                'series_title': item['series_title'],
-                'season_number': item['season_number'],
-                'episode_number': item['episode_number'],
-                'is_geo_restricted': bool(item['is_geo_restricted']) if item['is_geo_restricted'] is not None else None,
-                'restriction_type': item['restriction_type'],
-                'last_checked': item['last_checked'],
-                
-                # High priority metadata
-                'description': self._extract_from_metadata(item, 'description'),
-                'thumbnail': self._extract_from_metadata(item, 'images[0].file'),
-                'age_rating': self._extract_from_metadata(item, 'age_rating.label') or self._extract_from_metadata(item, 'age_rating.age'),
-                'access_restriction': self._extract_from_metadata(item, 'access_restriction'),
-                
-                # Medium priority metadata
-                'available_until': self._extract_from_metadata(item, 'available_until'),
-                'languages': self._extract_languages(item),
-                'platform': self._parse_platform(item.get('platform', 'primeran.eus')),  # Export as array
-                'media_type': self._extract_from_metadata(item, 'media_type'),  # audio or video
-                'content_url': self._get_content_url(item)
-            }
-            export_data['content'].append(content_item)
-        
-        # Write to file
         output_file = self.output_dir / "content.json"
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(export_data, f, indent=2, ensure_ascii=False)
+        export_date = datetime.now().isoformat()
         
-        print(f"Exported {len(all_content)} items to {output_file}")
+        count = 0
+        with open(output_file, 'w', encoding='utf-8') as f:
+            # Write header
+            f.write('{\n')
+            f.write(f'  "export_date": "{export_date}",\n')
+            f.write('  "statistics": ')
+            json.dump(stats, f, indent=2, ensure_ascii=False)
+            f.write(',\n')
+            f.write('  "content": [\n')
+            
+            first = True
+            # Iterate using generator
+            for item in self.db.yield_all_content():
+                if not first:
+                    f.write(',\n')
+                first = False
+                
+                # Convert to JSON-serializable format
+                try:
+                    content_item = {
+                        'slug': item['slug'],
+                        'title': item['title'],
+                        'type': item['type'],
+                        'duration': item['duration'],
+                        'year': item['year'],
+                        'genres': json.loads(item['genres']) if item['genres'] else [],
+                        'series_slug': item['series_slug'],
+                        'series_title': item['series_title'],
+                        'season_number': item['season_number'],
+                        'episode_number': item['episode_number'],
+                        'is_geo_restricted': bool(item['is_geo_restricted']) if item['is_geo_restricted'] is not None else None,
+                        'restriction_type': item['restriction_type'],
+                        'last_checked': item['last_checked'],
+                        
+                        # High priority metadata
+                        'description': self._extract_from_metadata(item, 'description'),
+                        'thumbnail': self._extract_from_metadata(item, 'images[0].file'),
+                        'age_rating': self._extract_from_metadata(item, 'age_rating.label') or self._extract_from_metadata(item, 'age_rating.age'),
+                        'access_restriction': self._extract_from_metadata(item, 'access_restriction'),
+                        
+                        # Medium priority metadata
+                        'available_until': self._extract_from_metadata(item, 'available_until'),
+                        'languages': self._extract_languages(item),
+                        'platform': self._parse_platform(item.get('platform', 'primeran.eus')),
+                        'media_type': self._extract_from_metadata(item, 'media_type'),
+                        'content_url': self._get_content_url(item)
+                    }
+                    
+                    # Write item with indentation
+                    item_json = json.dumps(content_item, indent=2, ensure_ascii=False)
+                    # Indent the whole block to match outer structure
+                    indented_item = '\n'.join('    ' + line for line in item_json.split('\n'))
+                    f.write(indented_item)
+                    
+                    count += 1
+                    if count % 1000 == 0:
+                        print(f"  Exported {count} items...")
+                        
+                except Exception as e:
+                    print(f"Error processing item {item.get('slug')}: {e}")
+                    # Continue to next item instead of crashing
+                    continue
+            
+            # Close array and object
+            f.write('\n  ]\n')
+            f.write('}\n')
+        
+        print(f"Exported {count} items to {output_file}")
         
         return {
             'file': str(output_file),
-            'items_exported': len(all_content),
-            'export_date': export_data['export_date']
+            'items_exported': count,
+            'export_date': export_date
         }
     
     def export_statistics_only(self) -> Dict[str, Any]:
@@ -293,46 +315,69 @@ class JSONExporter:
     
     def export_geo_restricted_only(self) -> Dict[str, Any]:
         """
-        Export only geo-restricted content
+        Export only geo-restricted content using streaming
         
         Returns:
             Dictionary with geo-restricted content
         """
-        geo_restricted = self.db.get_all_content(geo_restricted_only=True)
-        
-        export_data = {
-            'export_date': datetime.now().isoformat(),
-            'count': len(geo_restricted),
-            'content': []
-        }
-        
-        for item in geo_restricted:
-            content_item = {
-                'slug': item['slug'],
-                'title': item['title'],
-                'type': item['type'],
-                'series_title': item['series_title'],
-                'season_number': item['season_number'],
-                'episode_number': item['episode_number'],
-                'last_checked': item['last_checked'],
-                
-                # Add metadata fields for geo-restricted content too
-                'description': self._extract_from_metadata(item, 'description'),
-                'thumbnail': self._extract_from_metadata(item, 'images[0].file'),
-                'age_rating': self._extract_from_metadata(item, 'age_rating.label') or self._extract_from_metadata(item, 'age_rating.age'),
-                'access_restriction': self._extract_from_metadata(item, 'access_restriction'),
-                'available_until': self._extract_from_metadata(item, 'available_until'),
-                'languages': self._extract_languages(item),
-                'platform': self._parse_platform(item.get('platform', 'primeran.eus')),  # Export as array
-                'media_type': self._extract_from_metadata(item, 'media_type'),  # audio or video
-                'content_url': self._get_content_url(item)
-            }
-            export_data['content'].append(content_item)
+        # Get count first (cheap relative to loading all)
+        geo_count = self.db.get_statistics()['geo_restricted_count']
         
         output_file = self.output_dir / "geo-restricted.json"
+        export_date = datetime.now().isoformat()
+        
+        count = 0
         with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(export_data, f, indent=2, ensure_ascii=False)
+            f.write('{\n')
+            f.write(f'  "export_date": "{export_date}",\n')
+            f.write(f'  "count": {geo_count},\n')
+            f.write('  "content": [\n')
+            
+            first = True
+            # Use yield_all_content with filter
+            for item in self.db.yield_all_content(geo_restricted_only=True):
+                if not first:
+                    f.write(',\n')
+                first = False
+                
+                try:
+                    content_item = {
+                        'slug': item['slug'],
+                        'title': item['title'],
+                        'type': item['type'],
+                        'series_title': item['series_title'],
+                        'season_number': item['season_number'],
+                        'episode_number': item['episode_number'],
+                        'last_checked': item['last_checked'],
+                        
+                        # Add metadata fields for geo-restricted content too
+                        'description': self._extract_from_metadata(item, 'description'),
+                        'thumbnail': self._extract_from_metadata(item, 'images[0].file'),
+                        'age_rating': self._extract_from_metadata(item, 'age_rating.label') or self._extract_from_metadata(item, 'age_rating.age'),
+                        'access_restriction': self._extract_from_metadata(item, 'access_restriction'),
+                        'available_until': self._extract_from_metadata(item, 'available_until'),
+                        'languages': self._extract_languages(item),
+                        'platform': self._parse_platform(item.get('platform', 'primeran.eus')),
+                        'media_type': self._extract_from_metadata(item, 'media_type'),
+                        'content_url': self._get_content_url(item)
+                    }
+                    
+                    item_json = json.dumps(content_item, indent=2, ensure_ascii=False)
+                    indented_item = '\n'.join('    ' + line for line in item_json.split('\n'))
+                    f.write(indented_item)
+                    
+                    count += 1
+                except Exception as e:
+                    print(f"Error processing geo-restricted item {item.get('slug')}: {e}")
+                    continue
+            
+            f.write('\n  ]\n')
+            f.write('}\n')
         
-        print(f"Exported {len(geo_restricted)} geo-restricted items to {output_file}")
+        print(f"Exported {count} geo-restricted items to {output_file}")
         
-        return export_data
+        return {
+            'file': str(output_file),
+            'items_exported': count,
+            'export_date': export_date
+        }
