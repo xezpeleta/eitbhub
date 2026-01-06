@@ -1,5 +1,5 @@
 {
-  "export_date": "2026-01-06T11:02:32.600806",
+  "export_date": "2026-01-06T11:07:35.414309",
   "statistics": {
     "total_content": 11346,
     "by_type": {
@@ -84,7 +84,15 @@
       "Kalifikatu gabe": 1,
       "H": 1
     },
-    "by_language": {},
+    "by_language": {
+      "eu": 10873,
+      "vo": 822,
+      "es": 365,
+      "en": 78,
+      "un": 21,
+      "au": 20,
+      "fr": 14
+    },
     "geo_restricted_by_platform": {
       "makusi.eus": {
         "restricted": 4328,

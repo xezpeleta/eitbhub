@@ -557,26 +557,48 @@ class ContentDatabase:
         """, params)
         stats['by_age_rating'] = {row[0]: row[1] for row in cursor.fetchall()}
 
-        # By language code (from metadata JSON; tolerate malformed JSON)
-        cursor.execute("""
-            WITH all_langs AS (
-                SELECT
-                    LOWER(TRIM(
-                        COALESCE(
-                            json_extract(metadata, '$.primary_language.code'),
-                            json_extract(metadata, '$.audio_language.code'),
-                            json_extract(metadata, '$.language.code')
-                        )
-                    )) AS lang
-                FROM content
-            )
-            SELECT lang, COUNT(*) AS count
-            FROM all_langs
-            WHERE lang IS NOT NULL AND lang != ''
-            GROUP BY lang
-            ORDER BY count DESC
-        """)
-        stats['by_language'] = {row[0]: row[1] for row in cursor.fetchall()}
+        # By language code (parsed in Python from metadata to be robust against malformed JSON)
+        language_counts: Dict[str, int] = {}
+        cursor.execute("SELECT metadata FROM content")
+        for (metadata_str,) in cursor.fetchall():
+            if not metadata_str:
+                continue
+            try:
+                metadata = json.loads(metadata_str) if isinstance(metadata_str, str) else metadata_str
+            except (json.JSONDecodeError, TypeError):
+                continue
+
+            languages = set()
+
+            # Prefer audios array
+            audios = metadata.get('audios')
+            if isinstance(audios, list):
+                for audio in audios:
+                    if isinstance(audio, dict):
+                        code = audio.get('code')
+                        if code:
+                            languages.add(str(code).lower())
+
+            # Fallback to subtitle languages
+            if not languages:
+                subtitles = metadata.get('subtitle')
+                if isinstance(subtitles, list):
+                    for sub in subtitles:
+                        if isinstance(sub, dict):
+                            lang = sub.get('language')
+                            if isinstance(lang, dict):
+                                code = lang.get('code')
+                                if code:
+                                    languages.add(str(code).lower())
+
+            for code in languages:
+                language_counts[code] = language_counts.get(code, 0) + 1
+
+        # Sort languages by count descending for nicer charts
+        stats['by_language'] = {
+            code: count
+            for code, count in sorted(language_counts.items(), key=lambda kv: kv[1], reverse=True)
+        }
 
         # Geo-restricted by platform (restricted and accessible counts per platform)
         cursor.execute("""
