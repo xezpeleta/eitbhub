@@ -673,6 +673,34 @@ function renderPlatformBadges(platforms) {
     return badges.join(' ');
 }
 
+// Render media type icon (audio/video) based on media_type field
+function renderMediaTypeIcon(mediaType) {
+    if (!mediaType) return '';
+    const mt = String(mediaType).toLowerCase();
+    if (mt === 'audio') {
+        return `
+            <span class="detail-media-type" title="Audio">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Audio">
+                    <path d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2"/>
+                </svg>
+            </span>
+        `;
+    }
+    if (mt === 'video') {
+        return `
+            <span class="detail-media-type" title="Bideo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Bideo">
+                    <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/>
+                    <path d="m6.2 5.3 3.1 3.9"/>
+                    <path d="m12.4 3.4 3.1 4"/>
+                    <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>
+                </svg>
+            </span>
+        `;
+    }
+    return '';
+}
+
 // Render series row
 function renderSeriesRow(series, isExpanded) {
     const restrictedCount = series.restricted_count;
@@ -881,30 +909,26 @@ function renderDetailRow(item, isEpisode) {
         }
     }
 
-    // Meta info: year, duration, age_rating, media_type
+    // Meta info: year (kept separate above the inline meta row)
     const metaParts = [];
     if (item.year) metaParts.push(`${escapeHtml(String(item.year))}`);
-    if (item.duration) metaParts.push(formatDuration(item.duration));
-    if (item.age_rating) metaParts.push(escapeHtml(item.age_rating));
-    if (item.media_type) metaParts.push(escapeHtml(item.media_type));
     const metaLine = metaParts.length > 0
         ? `<div class="detail-meta-line">${metaParts.join(' · ')}</div>`
         : '';
 
     // Availability (date only)
-    let availableLine = '';
+    let availableText = '';
     if (item.available_until) {
         const availableDate = String(item.available_until).split('T')[0] || String(item.available_until);
-        availableLine = `<div class="detail-meta-line detail-available">Noiz arte: ${escapeHtml(availableDate)}</div>`;
+        availableText = `Noiz arte: ${escapeHtml(availableDate)}`;
     }
 
     // Languages
-    let languagesHtml = '';
+    let languagesBadges = '';
     if (item.languages && Array.isArray(item.languages) && item.languages.length > 0) {
-        languagesHtml = item.languages.map(lang =>
+        languagesBadges = item.languages.map(lang =>
             `<span class="language-badge">${escapeHtml(lang.toUpperCase())}</span>`
         ).join(' ');
-        languagesHtml = `<div class="detail-meta-line">${languagesHtml}</div>`;
     }
 
     // Genres
@@ -931,7 +955,6 @@ function renderDetailRow(item, isEpisode) {
         itemPlatforms = [];
     }
     const platformDisplay = renderPlatformBadges(itemPlatforms) || '-';
-    const platformLine = `<div class="detail-meta-line detail-platforms">${platformDisplay}</div>`;
 
     // Content URL (explicit link if available)
     let linkHtml = '';
@@ -947,6 +970,19 @@ function renderDetailRow(item, isEpisode) {
         `;
     }
 
+    // Combined inline meta row: duration, age badge, media type icon, availability, languages, platforms
+    const inlineParts = [];
+    if (item.duration) inlineParts.push(formatDuration(item.duration));
+    if (item.age_rating) inlineParts.push(`<span class="age-rating-badge">${escapeHtml(item.age_rating)}</span>`);
+    const mediaTypeIcon = item.media_type ? renderMediaTypeIcon(item.media_type) : '';
+    if (mediaTypeIcon) inlineParts.push(mediaTypeIcon);
+    if (availableText) inlineParts.push(availableText);
+    if (languagesBadges) inlineParts.push(languagesBadges);
+    if (platformDisplay) inlineParts.push(platformDisplay);
+    const inlineMeta = inlineParts.length > 0
+        ? `<div class="detail-meta-line detail-meta-inline">${inlineParts.join(' ')}</div>`
+        : '';
+
     const descriptionHtml = hasDescription
         ? `<p class="detail-description">${escapeHtml(description)}</p>`
         : '';
@@ -959,10 +995,8 @@ function renderDetailRow(item, isEpisode) {
                     <div class="detail-content">
                         ${episodeInfo}
                         ${metaLine}
-                        ${availableLine}
-                        ${languagesHtml}
+                        ${inlineMeta}
                         ${genresHtml}
-                        ${platformLine}
                         ${linkHtml}
                         ${descriptionHtml}
                     </div>

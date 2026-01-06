@@ -380,6 +380,26 @@ tbody tr:hover {
     margin-bottom: 0.25rem;
 }
 
+.detail-meta-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.detail-media-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--secondary-color);
+}
+
+.detail-media-type svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+}
+
 .detail-episode-info {
     font-weight: 600;
     color: var(--text-color);
