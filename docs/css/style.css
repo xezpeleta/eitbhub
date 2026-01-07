@@ -813,36 +813,23 @@ footer a:hover {
     }
 
     /* Metadata rows - Group them */
+    /* Metadata rows - Group them */
+    /* Metadata rows - Group them */
+    /* Hide secondary badges on mobile: Age(5), Lang(6), Geo(9), Platform(10) */
     td:nth-child(5),
-    /* Adina */
     td:nth-child(6),
-    /* Hizkuntza */
-    td:nth-child(7),
-    /* Iraupena */
-    td:nth-child(8)
+    td:nth-child(9),
+    td:nth-child(10) {
+        display: none !important;
+    }
 
-    /* Urtea */
-        {
+    /* Duration (7) and Year (8) - Style as concise meta line */
+    td:nth-child(7),
+    td:nth-child(8) {
         display: inline-block;
         padding: 0 0.5rem 0.25rem 0;
         font-size: 0.85rem;
         color: var(--secondary-color);
-        width: auto;
-    }
-
-    /* Add labels via CSS content if needed, or just style purely */
-    td:nth-child(5):empty,
-    td:nth-child(6):empty,
-    td:nth-child(7):empty,
-    td:nth-child(8):empty {
-        display: none;
-    }
-
-    /* Geo Restriction and Platform - Make them pills/badges at bottom */
-    td:nth-child(9),
-    td:nth-child(10) {
-        display: inline-block;
-        padding: 0.5rem 0.5rem 0.5rem 0;
         width: auto;
     }
 
