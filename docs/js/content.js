@@ -15,6 +15,10 @@ let currentDetailValues = {
 let touchStartX = 0;
 let touchEndX = 0;
 
+// Auto-hide navigation arrows timer
+let navHideTimer = null;
+const NAV_HIDE_DELAY = 3000; // 3 seconds
+
 
 // Attempt to infer season number from a title prefix like "D7: 1. Tartaldea"
 function inferSeasonFromTitle(title) {
@@ -1221,6 +1225,48 @@ function findItemIndex(item, items) {
     return items.findIndex(i => i.slug === item.slug);
 }
 
+// Show navigation arrows and reset auto-hide timer
+function showNavButtons() {
+    const prevBtn = document.getElementById('mobile-nav-prev');
+    const nextBtn = document.getElementById('mobile-nav-next');
+
+    if (prevBtn) prevBtn.classList.remove('nav-hidden');
+    if (nextBtn) nextBtn.classList.remove('nav-hidden');
+
+    // Reset timer
+    resetNavHideTimer();
+}
+
+// Hide navigation arrows
+function hideNavButtons() {
+    const prevBtn = document.getElementById('mobile-nav-prev');
+    const nextBtn = document.getElementById('mobile-nav-next');
+
+    if (prevBtn) prevBtn.classList.add('nav-hidden');
+    if (nextBtn) nextBtn.classList.add('nav-hidden');
+}
+
+// Reset the auto-hide timer for navigation arrows
+function resetNavHideTimer() {
+    // Clear existing timer
+    if (navHideTimer) {
+        clearTimeout(navHideTimer);
+    }
+
+    // Set new timer to hide arrows after delay
+    navHideTimer = setTimeout(() => {
+        hideNavButtons();
+    }, NAV_HIDE_DELAY);
+}
+
+// Cancel the auto-hide timer (e.g., when modal is closed)
+function cancelNavHideTimer() {
+    if (navHideTimer) {
+        clearTimeout(navHideTimer);
+        navHideTimer = null;
+    }
+}
+
 function updateNavButtons() {
     const prevBtn = document.getElementById('mobile-nav-prev');
     const nextBtn = document.getElementById('mobile-nav-next');
@@ -1255,6 +1301,8 @@ function navigateItem(direction) {
     if (newIndex !== index) {
         const newItem = items[newIndex];
         openMobileDetail(newItem);
+        // Show arrows when user actively navigates
+        showNavButtons();
     }
 }
 
@@ -1289,19 +1337,30 @@ function initMobileNavigation() {
         closeBtn.addEventListener('click', closeMobileDetail);
     }
 
-    // Swipe Gestures
+    // Swipe Gestures and Touch Interaction
     if (modal) {
         // Remove old listeners? Hard to do without reference. 
         // We'll rely on this running once on DOMContentLoaded or check a flag.
         if (!modal.hasAttribute('data-swipe-init')) {
             modal.addEventListener('touchstart', (e) => {
                 touchStartX = e.changedTouches[0].screenX;
+                // Show arrows on any touch
+                showNavButtons();
             }, { passive: true });
 
             modal.addEventListener('touchend', (e) => {
                 touchEndX = e.changedTouches[0].screenX;
                 handleSwipe();
             }, { passive: true });
+
+            // Show arrows on tap/click anywhere in modal
+            modal.addEventListener('click', (e) => {
+                // Don't trigger if clicking on buttons or links
+                if (!e.target.closest('button') && !e.target.closest('a')) {
+                    showNavButtons();
+                }
+            });
+
             modal.setAttribute('data-swipe-init', 'true');
         }
     }
@@ -1392,6 +1451,9 @@ function openMobileDetail(item) {
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
+
+    // Start auto-hide timer for navigation arrows
+    showNavButtons();
 }
 
 function closeMobileDetail() {
@@ -1401,6 +1463,9 @@ function closeMobileDetail() {
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('modal-open');
+
+    // Cancel auto-hide timer when modal closes
+    cancelNavHideTimer();
 }
 
 // Initialize Mobile Modal Listeners
