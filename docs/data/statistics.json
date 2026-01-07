@@ -1,15 +1,16 @@
 {
-  "export_date": "2026-01-07T01:09:18.461204",
+  "export_date": "2026-01-07T17:49:22.598011",
   "statistics": {
-    "total_content": 17971,
+    "total_content": 17999,
     "by_type": {
-      "episode": 17223,
-      "live": 7,
-      "series": 251,
+      "episode": 17247,
+      "live": 6,
+      "series": 253,
+      "unknown": 3,
       "vod": 490
     },
     "by_platform": {
-      "etbon.eus": 6823,
+      "etbon.eus": 6852,
       "makusi.eus": 6079,
       "primeran.eus": 6294
     },
@@ -70,27 +71,27 @@
       "2021": 486,
       "2022": 727,
       "2023": 1107,
-      "2024": 2411,
-      "2025": 1964,
-      "2026": 7
+      "2024": 2413,
+      "2025": 1969,
+      "2026": 10
     },
     "by_age_rating": {
-      "D": 10049,
+      "D": 10067,
       "0-4": 2455,
       "5-7": 1873,
       "+8": 1714,
-      "+12": 785,
+      "+12": 787,
       "TP": 464,
-      "+7": 297,
-      "+16": 248,
+      "+7": 298,
+      "+16": 249,
       "+18": 78,
-      "Unknown": 6,
+      "Unknown": 12,
       "Kalifikatu gabe": 1,
       "H": 1
     },
     "by_language": {
-      "eu": 13583,
-      "es": 4191,
+      "eu": 13588,
+      "es": 4197,
       "vo": 822,
       "en": 83,
       "au": 61,
@@ -99,8 +100,8 @@
     },
     "geo_restricted_by_platform": {
       "etbon.eus": {
-        "restricted": 127,
-        "accessible": 5726
+        "restricted": 149,
+        "accessible": 6162
       },
       "makusi.eus": {
         "restricted": 4328,
@@ -111,10 +112,10 @@
         "accessible": 4791
       }
     },
-    "geo_restricted_count": 5099,
-    "accessible_count": 11758,
-    "unknown_count": 1114,
-    "geo_restricted_percentage": 28.37349062378276,
-    "last_check": "2026-01-07T00:57:58.912995"
+    "geo_restricted_count": 5121,
+    "accessible_count": 12193,
+    "unknown_count": 685,
+    "geo_restricted_percentage": 28.451580643369077,
+    "last_check": "2026-01-07T17:41:38.997021"
   }
 }
