@@ -1101,8 +1101,28 @@ footer a:hover {
     width: 100%;
     max-width: 100vw;
     /* Strict constraint for Firefox */
-    /* Standard padding, footer is now a sibling flex item */
-    padding-bottom: 2rem;
+    /* No bottom padding needed - actions section handles its own spacing */
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    /* Smooth momentum scrolling on iOS */
+}
+
+/* Custom scrollbar for webkit browsers (optional, subtle) */
+.mobile-detail-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.mobile-detail-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mobile-detail-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+.mobile-detail-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .mobile-detail-close {
@@ -1158,8 +1178,8 @@ footer a:hover {
     /* Match dark theme bg */
     flex-grow: 1;
     color: #e0e0e0;
-    padding-bottom: 2rem;
-    /* Standard padding, footer spacing handled by parent */
+    padding-bottom: 1rem;
+    /* Reduced padding since actions are now inside */
     max-width: 100vw;
     box-sizing: border-box;
 }
@@ -1196,22 +1216,20 @@ footer a:hover {
     font-size: 0.95rem;
     line-height: 1.5;
     color: #d0d0d0;
-    margin-bottom: 0;
-    /* Remove bottom margin as spacing is handled by container padding */
+    margin-bottom: 1.5rem;
+    /* Add margin for spacing before button */
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
 
 #mobile-detail-actions {
-    /* No longer absolute/fixed, standard flex item at bottom */
+    /* Now inside scrollable content, not fixed */
     width: 100%;
-    padding: 1rem;
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    padding: 1rem 1.25rem;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    /* Extra bottom padding for safe area */
     background: #121212;
-    border-top: 1px solid #2a2a2a;
-    z-index: 2020;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
-    flex-shrink: 0;
+    /* Maintain background for visual separation */
 }
 
 .mobile-content-link {
