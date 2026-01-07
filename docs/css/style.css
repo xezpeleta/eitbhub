@@ -44,12 +44,16 @@ header h1 {
 }
 
 header h1 a {
-    color: inherit;
+    color: white;
     text-decoration: none;
 }
 
 header h1 a:hover {
     opacity: 0.9;
+}
+
+.logo-accent {
+    color: #00d7b6;
 }
 
 .header-flex {
