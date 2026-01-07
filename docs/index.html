@@ -29,6 +29,12 @@
             </div>
 
             <div id="filters-container" class="filters-container">
+                <!-- Mobile Filter Header (Hidden on Desktop) -->
+                <div class="filter-modal-header">
+                    <h3>Filtroak</h3>
+                    <button id="filter-modal-close" class="filter-modal-close">×</button>
+                </div>
+
                 <div class="filter-group">
                     <label for="search-input">Bilatu:</label>
                     <input type="text" id="search-input" placeholder="Bilatu izenburuan...">
@@ -71,6 +77,11 @@
                     <select id="media-type-filter">
                         <option value="">Guztia</option>
                     </select>
+                </div>
+
+                <!-- Mobile Filter Actions (Hidden on Desktop) -->
+                <div class="filter-modal-actions">
+                    <button id="filter-apply-btn" class="filter-apply-btn">Emaitzak ikusi</button>
                 </div>
                 <div class="filter-group">
                     <button id="clear-filters">Ezabatu filtroak</button>

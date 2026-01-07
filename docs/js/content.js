@@ -240,21 +240,29 @@ function populateFilters() {
     // Mobile filters toggle
     const filtersToggle = document.getElementById('filters-toggle');
     const filtersContainer = document.getElementById('filters-container');
+    const filterModalClose = document.getElementById('filter-modal-close');
+    const filterApplyBtn = document.getElementById('filter-apply-btn');
 
     if (filtersToggle && filtersContainer) {
         filtersToggle.addEventListener('click', () => {
-            const isExpanded = filtersToggle.getAttribute('aria-expanded') === 'true';
+            // Mobile modal: just add 'open' class
+            filtersContainer.classList.add('open');
+            document.body.classList.add('modal-open');
+        });
+    }
 
-            // Toggle state
-            filtersToggle.setAttribute('aria-expanded', !isExpanded);
-            filtersContainer.classList.toggle('open');
+    if (filterModalClose && filtersContainer) {
+        filterModalClose.addEventListener('click', () => {
+            filtersContainer.classList.remove('open');
+            document.body.classList.remove('modal-open');
+        });
+    }
 
-            // Update button text/icon
-            const toggleText = filtersToggle.querySelector('.toggle-text');
-            const toggleIcon = filtersToggle.querySelector('.toggle-icon');
-
-            if (toggleText) toggleText.textContent = isExpanded ? 'Erakutsi' : 'Ezkutatu';
-            if (toggleIcon) toggleIcon.textContent = isExpanded ? '▼' : '▲';
+    if (filterApplyBtn && filtersContainer) {
+        filterApplyBtn.addEventListener('click', () => {
+            filtersContainer.classList.remove('open');
+            document.body.classList.remove('modal-open');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
 }
