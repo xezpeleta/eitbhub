@@ -19,6 +19,9 @@ let touchEndX = 0;
 let navHideTimer = null;
 const NAV_HIDE_DELAY = 3000; // 3 seconds
 
+// Scroll position lock for modal (iOS Safari fix)
+let scrollPosition = 0;
+
 
 // Attempt to infer season number from a title prefix like "D7: 1. Tartaldea"
 function inferSeasonFromTitle(title) {
@@ -1267,6 +1270,20 @@ function cancelNavHideTimer() {
     }
 }
 
+// Lock body scroll (save position and apply fixed positioning)
+function lockBodyScroll() {
+    scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    document.body.style.top = `-${scrollPosition}px`;
+    document.body.classList.add('modal-open');
+}
+
+// Unlock body scroll (restore position and remove fixed positioning)
+function unlockBodyScroll() {
+    document.body.classList.remove('modal-open');
+    document.body.style.top = '';
+    window.scrollTo(0, scrollPosition);
+}
+
 function updateNavButtons() {
     const prevBtn = document.getElementById('mobile-nav-prev');
     const nextBtn = document.getElementById('mobile-nav-next');
@@ -1450,7 +1467,8 @@ function openMobileDetail(item) {
     // Show Modal
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
+    // Lock body scroll with position saving
 
     // Start auto-hide timer for navigation arrows
     showNavButtons();
@@ -1462,7 +1480,8 @@ function closeMobileDetail() {
 
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('modal-open');
+    unlockBodyScroll();
+    // Unlock body scroll and restore position
 
     // Cancel auto-hide timer when modal closes
     cancelNavHideTimer();

@@ -1070,6 +1070,8 @@ footer a:hover {
     flex-direction: column;
     overflow: hidden;
     /* Frame itself never scrolls */
+    touch-action: none;
+    /* Prevent any touch actions on the modal backdrop from propagating */
 }
 
 .mobile-detail-modal.open {
@@ -1108,6 +1110,10 @@ footer a:hover {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     /* Smooth momentum scrolling on iOS */
+    overscroll-behavior: contain;
+    /* CRITICAL: Prevents scroll chaining to parent/body */
+    touch-action: pan-y;
+    /* Allow vertical scrolling only, prevent other touch gestures from propagating */
 }
 
 /* Custom scrollbar for webkit browsers (optional, subtle) */
@@ -1260,6 +1266,15 @@ footer a:hover {
 /* Ensure no scrolling on body when modal is open */
 body.modal-open {
     overflow: hidden;
+    /* Standard overflow hidden */
+    position: fixed;
+    /* iOS Safari fix: position fixed prevents scrolling */
+    width: 100%;
+    /* Maintain width when position fixed */
+    height: 100%;
+    /* Maintain height */
+    overscroll-behavior: none;
+    /* Prevent pull-to-refresh and overscroll effects */
 }
 
 /* Mobile Navigation Buttons */
