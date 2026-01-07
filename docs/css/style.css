@@ -1073,7 +1073,8 @@ footer a:hover {
     /* Match dark theme bg */
     flex-grow: 1;
     color: #e0e0e0;
-    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    /* Reduced bottom padding to avoid double spacing with the new fixed footer padding logic */
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
 }
 
 #mobile-detail-title {
@@ -1106,7 +1107,21 @@ footer a:hover {
     font-size: 0.95rem;
     line-height: 1.5;
     color: #d0d0d0;
-    margin-bottom: 2rem;
+    margin-bottom: 0;
+    /* Remove bottom margin as spacing is handled by container padding */
+}
+
+#mobile-detail-actions {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    background: #121212;
+    border-top: 1px solid #2a2a2a;
+    z-index: 2020;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .mobile-content-link {
