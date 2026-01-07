@@ -1060,6 +1060,8 @@ footer a:hover {
     top: 0;
     left: 0;
     width: 100%;
+    max-width: 100vw;
+    /* Strict constraint for Firefox */
     /* Use dvh to respect mobile address bars */
     height: 100dvh;
     z-index: 2000;
@@ -1097,6 +1099,8 @@ footer a:hover {
     overflow-y: auto;
     overflow-x: hidden;
     width: 100%;
+    max-width: 100vw;
+    /* Strict constraint for Firefox */
     /* Standard padding, footer is now a sibling flex item */
     padding-bottom: 2rem;
 }
@@ -1156,6 +1160,8 @@ footer a:hover {
     color: #e0e0e0;
     padding-bottom: 2rem;
     /* Standard padding, footer spacing handled by parent */
+    max-width: 100vw;
+    box-sizing: border-box;
 }
 
 #mobile-detail-title {
@@ -1165,6 +1171,8 @@ footer a:hover {
     margin-bottom: 0.5rem;
     line-height: 1.2;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .mobile-detail-meta {
@@ -1190,6 +1198,8 @@ footer a:hover {
     color: #d0d0d0;
     margin-bottom: 0;
     /* Remove bottom margin as spacing is handled by container padding */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 #mobile-detail-actions {
