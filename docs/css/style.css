@@ -851,6 +851,19 @@ footer a:hover {
         color: var(--text-color);
     }
 
+    /* Mobile Filter Body - Scrollable Content Area */
+    .filter-modal-body {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        /* Smooth iOS scrolling */
+        overscroll-behavior: contain;
+        /* Prevent scroll chaining */
+        padding-bottom: 1rem;
+        /* Extra space at bottom */
+    }
+
     /* Mobile Filter Actions */
     .filter-modal-actions {
         display: block;
@@ -861,6 +874,8 @@ footer a:hover {
         bottom: 0;
         margin-top: auto;
         /* Push to bottom if content is short */
+        flex-shrink: 0;
+        /* Prevent shrinking */
     }
 
     .filter-apply-btn {
@@ -876,7 +891,7 @@ footer a:hover {
     }
 
     /* Mobile specific adjustment for filter groups inside modal */
-    .filters-container .filter-group {
+    .filter-modal-body .filter-group {
         padding: 0 1.5rem;
         margin-bottom: 1rem;
         box-sizing: border-box;
@@ -884,7 +899,7 @@ footer a:hover {
     }
 
     /* First group margin */
-    .filters-container .filter-group:nth-child(2) {
+    .filter-modal-body .filter-group:first-child {
         margin-top: 1.5rem;
     }
 
