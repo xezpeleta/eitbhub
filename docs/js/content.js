@@ -1815,49 +1815,79 @@ function renderEpisodeList(episodes) {
 
     let html = '<div class="episode-list-container">';
     
+    // Group episodes by season
+    const episodesBySeason = new Map();
     episodes.forEach((episode, index) => {
-        // Season/Episode info
-        let episodeLabel = '';
-        if (episode.season_display || episode.season_number) {
-            episodeLabel += `D${episode.season_display || episode.season_number}`;
+        const seasonKey = episode.season_display || episode.season_number || 'unknown';
+        if (!episodesBySeason.has(seasonKey)) {
+            episodesBySeason.set(seasonKey, []);
         }
-        if (episode.episode_number) {
-            episodeLabel += `:${episode.episode_number}`;
+        episodesBySeason.get(seasonKey).push({ episode, index });
+    });
+    
+    // Sort season keys (handle 'unknown' last)
+    const sortedSeasons = Array.from(episodesBySeason.keys()).sort((a, b) => {
+        if (a === 'unknown') return 1;
+        if (b === 'unknown') return -1;
+        return a - b;
+    });
+    
+    // Render episodes grouped by season
+    sortedSeasons.forEach(seasonKey => {
+        const seasonEpisodes = episodesBySeason.get(seasonKey);
+        
+        // Add season header
+        if (seasonKey !== 'unknown') {
+            html += `<div class="episode-season-header">${seasonKey}. denboraldia</div>`;
+        } else {
+            html += `<div class="episode-season-header">Denboraldia ezezaguna</div>`;
         }
         
-        // Duration
-        const duration = episode.duration ? formatDuration(episode.duration) : '';
-        
-        // Thumbnail
-        const thumbnail = episode.thumbnail || '';
-        
-        // Title
-        const title = episode.title || episode.slug || 'Izen gabea';
-        
-        // Geo restriction badge
-        let restrictionBadge = '';
-        if (episode.is_geo_restricted === true) {
-            restrictionBadge = '<span class="episode-geo-badge restricted">🔒</span>';
-        } else if (episode.is_geo_restricted === false) {
-            restrictionBadge = '<span class="episode-geo-badge accessible">✓</span>';
-        }
-        
-        html += `
-            <div class="episode-list-item" data-episode-index="${index}">
-                <div class="episode-thumbnail">
-                    ${thumbnail ? `<img src="${escapeHtml(thumbnail)}" alt="${escapeHtml(title)}" loading="lazy">` : '<div class="episode-thumbnail-placeholder"></div>'}
-                </div>
-                <div class="episode-info">
-                    <div class="episode-header">
-                        ${episodeLabel ? `<span class="episode-label">${escapeHtml(episodeLabel)}</span>` : ''}
-                        ${restrictionBadge}
+        // Render episodes for this season
+        seasonEpisodes.forEach(({ episode, index }) => {
+            // Season/Episode info
+            let episodeLabel = '';
+            if (episode.season_display || episode.season_number) {
+                episodeLabel += `D${episode.season_display || episode.season_number}`;
+            }
+            if (episode.episode_number) {
+                episodeLabel += `:${episode.episode_number}`;
+            }
+            
+            // Duration
+            const duration = episode.duration ? formatDuration(episode.duration) : '';
+            
+            // Thumbnail
+            const thumbnail = episode.thumbnail || '';
+            
+            // Title
+            const title = episode.title || episode.slug || 'Izen gabea';
+            
+            // Geo restriction badge
+            let restrictionBadge = '';
+            if (episode.is_geo_restricted === true) {
+                restrictionBadge = '<span class="episode-geo-badge restricted">🔒</span>';
+            } else if (episode.is_geo_restricted === false) {
+                restrictionBadge = '<span class="episode-geo-badge accessible">✓</span>';
+            }
+            
+            html += `
+                <div class="episode-list-item" data-episode-index="${index}">
+                    <div class="episode-thumbnail">
+                        ${thumbnail ? `<img src="${escapeHtml(thumbnail)}" alt="${escapeHtml(title)}" loading="lazy">` : '<div class="episode-thumbnail-placeholder"></div>'}
                     </div>
-                    <div class="episode-title">${escapeHtml(title)}</div>
-                    ${duration ? `<div class="episode-duration">${duration}</div>` : ''}
+                    <div class="episode-info">
+                        <div class="episode-header">
+                            ${episodeLabel ? `<span class="episode-label">${escapeHtml(episodeLabel)}</span>` : ''}
+                            ${restrictionBadge}
+                        </div>
+                        <div class="episode-title">${escapeHtml(title)}</div>
+                        ${duration ? `<div class="episode-duration">${duration}</div>` : ''}
+                    </div>
+                    <div class="episode-arrow">›</div>
                 </div>
-                <div class="episode-arrow">›</div>
-            </div>
-        `;
+            `;
+        });
     });
     
     html += '</div>';
