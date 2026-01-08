@@ -862,6 +862,8 @@ footer a:hover {
         /* Prevent scroll chaining */
         padding-bottom: 1rem;
         /* Extra space at bottom */
+        width: 100%;
+        max-width: 100%;
     }
 
     /* Mobile Filter Actions */
@@ -895,6 +897,7 @@ footer a:hover {
         padding: 0 1.5rem;
         margin-bottom: 1rem;
         box-sizing: border-box;
+        width: 100%;
         /* Ensure padding doesn't cause overflow */
     }
 
@@ -908,6 +911,12 @@ footer a:hover {
         min-width: 0;
         box-sizing: border-box;
         /* Prevent overflow from padding */
+    }
+
+    .filter-group input,
+    .filter-group select {
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .filter-group button {
