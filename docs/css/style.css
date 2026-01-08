@@ -925,10 +925,10 @@ footer a:hover {
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         position: relative;
         padding-bottom: 0.5rem;
-        padding-left: 90px;
-        /* Reserve space for thumbnail column */
-        min-height: 90px;
-        /* Ensure minimal height for thumbnail */
+        padding-left: 70px;
+        /* Reserve space for vertical thumbnail column */
+        min-height: 95px;
+        /* Ensure minimal height for vertical thumbnail */
     }
 
     /* Hide expand toggle column as own row, make it absolute or handled differently if needed.
@@ -950,16 +950,17 @@ footer a:hover {
         position: absolute;
         left: 0;
         top: 0;
-        width: 90px;
+        width: 70px;
         height: 100%;
-        padding: 0.75rem 0 0 0.75rem !important;
+        padding: 0.5rem 0 0 0.5rem !important;
         border: none;
         text-align: left;
     }
 
     .thumbnail-img {
-        width: 60px;
-        height: 40px;
+        width: 50px;
+        height: 75px;
+        /* Vertical poster aspect ratio (2:3) */
         object-fit: cover;
         border-radius: 4px;
     }
