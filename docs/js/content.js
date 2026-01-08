@@ -1242,6 +1242,22 @@ function getNavigableItems() {
     return items;
 }
 
+// Get a flat list of all navigable items including series themselves
+// Order: Standalone items and Series (not individual episodes)
+function getAllNavigableItemsWithSeries() {
+    const items = [];
+
+    // 1. Add all standalone items
+    filteredGroupedContent.standalone.forEach(item => items.push({ type: 'item', data: item }));
+
+    // 2. Add all series as single navigable units
+    filteredGroupedContent.series.forEach(series => {
+        items.push({ type: 'series', data: series });
+    });
+
+    return items;
+}
+
 // Find index of current item in the navigable list
 function findItemIndex(item, items) {
     if (!item || !items) return -1;
@@ -1327,7 +1343,7 @@ function updateNavButtons() {
 }
 
 function navigateItem(direction) {
-    const { index, items } = currentDetailValues;
+    const { index, items, isSeriesView } = currentDetailValues;
     if (index === -1 || !items.length) return;
 
     let newIndex = index + direction;
@@ -1338,7 +1354,19 @@ function navigateItem(direction) {
 
     if (newIndex !== index) {
         const newItem = items[newIndex];
-        openMobileDetail(newItem);
+        
+        // Check if we're navigating in series view (items contain type info)
+        if (isSeriesView && newItem.type) {
+            // Navigation in all-items mode (series + standalone)
+            if (newItem.type === 'series') {
+                openSeriesModal(newItem.data);
+            } else {
+                openMobileDetail(newItem.data);
+            }
+        } else {
+            // Regular episode navigation
+            openMobileDetail(newItem);
+        }
         // Show arrows when user actively navigates
         showNavButtons();
     }
@@ -1425,14 +1453,33 @@ function openMobileDetail(item) {
     if (!modal) return;
 
     // Update Navigation State
-    // Check if we're coming from a series modal
-    const isFromSeries = currentDetailValues?.isSeries;
-    const seriesEpisodes = isFromSeries ? currentDetailValues.items : null;
+    // Check if we're coming from a series view modal (navigating between series/items)
+    const isFromSeriesView = currentDetailValues?.isSeriesView;
+    // Check if we're coming from within a series episodes list
+    const isFromSeriesEpisodes = currentDetailValues?.isSeries && !isFromSeriesView;
     
     let items, index;
-    if (seriesEpisodes) {
+    if (isFromSeriesView) {
+        // We were viewing a series list view and user tapped an episode from it
+        // Switch to navigating within that series' episodes
+        const seriesSlug = item.series_slug;
+        if (seriesSlug) {
+            const series = filteredGroupedContent.series.find(s => s.series_slug === seriesSlug);
+            if (series) {
+                items = series.episodes;
+                index = findItemIndex(item, items);
+            } else {
+                items = getNavigableItems();
+                index = findItemIndex(item, items);
+            }
+        } else {
+            // Standalone item - use all navigable items
+            items = getAllNavigableItemsWithSeries();
+            index = items.findIndex(i => i.type === 'item' && i.data.slug === item.slug);
+        }
+    } else if (isFromSeriesEpisodes) {
         // Navigate within series episodes only
-        items = seriesEpisodes;
+        items = currentDetailValues.items;
         index = findItemIndex(item, items);
     } else {
         // Navigate through all items
@@ -1440,7 +1487,7 @@ function openMobileDetail(item) {
         index = findItemIndex(item, items);
     }
 
-    currentDetailValues = { index, items, isSeries: false };
+    currentDetailValues = { index, items, isSeries: false, isSeriesView: false };
     updateNavButtons();
 
     // Remove series-specific class if present
@@ -1516,13 +1563,22 @@ function openSeriesModal(series) {
     const modal = document.getElementById('mobile-detail-modal');
     if (!modal) return;
 
+    // Get all navigable items (series + standalone items) for navigation
+    const allItems = getAllNavigableItemsWithSeries();
+    const seriesIndex = allItems.findIndex(item => 
+        item.type === 'series' && item.data.series_slug === series.series_slug
+    );
+
     // Store series context for navigation
     currentDetailValues = { 
-        index: -1, 
-        items: series.episodes,
+        index: seriesIndex, 
+        items: allItems,
         isSeries: true,
+        isSeriesView: true, // Flag to indicate we're in series list view
         seriesData: series
     };
+    
+    updateNavButtons();
     
     // Get poster from first episode
     const poster = document.getElementById('mobile-detail-poster');
@@ -1567,8 +1623,8 @@ function openSeriesModal(series) {
     const linkBtn = document.getElementById('mobile-detail-link');
     linkBtn.style.display = 'none';
 
-    // Hide navigation arrows for series view
-    hideNavButtons();
+    // Show navigation arrows for series view
+    showNavButtons();
 
     // Show modal
     modal.classList.add('open');
