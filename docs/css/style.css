@@ -1021,7 +1021,7 @@ footer a:hover {
         font-size: 0.8rem;
         font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: none;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1031,6 +1031,7 @@ footer a:hover {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        -webkit-tap-highlight-color: transparent;
     }
 
     .filter-segmented-btn:last-child {
@@ -1048,10 +1049,10 @@ footer a:hover {
     }
 
     .filter-segmented-btn.active {
-        background: var(--primary-color);
-        color: white;
+        background: var(--primary-color) !important;
+        color: white !important;
         font-weight: 600;
-        transition: all 0.1s ease-out;
+        transition: none !important;
     }
 
     /* Instant visual feedback on tap */
@@ -1061,18 +1062,18 @@ footer a:hover {
 
     /* Platform-specific colors for segmented control */
     .filter-segmented-platforms .filter-segmented-btn[data-platform="primeran"].active {
-        background: #1a1a1a;
-        color: #ffffff;
+        background: #1a1a1a !important;
+        color: #ffffff !important;
     }
 
     .filter-segmented-platforms .filter-segmented-btn[data-platform="makusi"].active {
-        background: #00E676;
-        color: #000000;
+        background: #00E676 !important;
+        color: #000000 !important;
     }
 
     .filter-segmented-platforms .filter-segmented-btn[data-platform="etbon"].active {
-        background: #FF5722;
-        color: #ffffff;
+        background: #FF5722 !important;
+        color: #ffffff !important;
     }
 
     /* Filter Chips (for multi-select) */
@@ -1092,12 +1093,13 @@ footer a:hover {
         font-size: 0.85rem;
         font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: none;
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
         min-height: 44px;
         white-space: nowrap;
+        -webkit-tap-highlight-color: transparent;
     }
 
     .filter-chip svg {
@@ -1109,9 +1111,9 @@ footer a:hover {
     }
 
     .filter-chip.active {
-        background: var(--primary-color);
-        color: white;
-        border-color: var(--primary-color);
+        background: var(--primary-color) !important;
+        color: white !important;
+        border-color: var(--primary-color) !important;
         font-weight: 600;
     }
 
@@ -1274,18 +1276,29 @@ footer a:hover {
 
     /* Title Row - Vertically centered with thumbnail */
     td:nth-child(3) {
-        display: flex;
-        align-items: center;
-        /* Vertically center with thumbnail */
+        display: block;
+        /* Changed from flex to block to allow proper text flow */
         font-size: 1rem;
         font-weight: 500;
-        line-height: 1.3;
+        line-height: 1.4;
         padding-right: 3rem;
         /* Space for expand button */
         padding-top: 0.5rem;
         padding-bottom: 0.5rem;
         min-height: 75px;
         /* Match thumbnail height for proper centering */
+        display: flex;
+        align-items: flex-start;
+        /* Align to top so text flows naturally */
+        flex-direction: column;
+        justify-content: center;
+        /* Center content vertically */
+    }
+
+    /* Ensure series episode count is visible and not cut off */
+    .series-episode-count {
+        display: inline-block;
+        white-space: nowrap;
     }
 
     /* Metadata rows - Group them */
@@ -1300,8 +1313,9 @@ footer a:hover {
     }
 
     /* Duration (7) and Year (8) - Style as concise meta line with separator */
-    td:nth-child(7),
-    td:nth-child(8) {
+    /* Only show for regular content rows, not series rows */
+    tr:not(.series-row) td:nth-child(7),
+    tr:not(.series-row) td:nth-child(8) {
         display: inline-block;
         padding: 0 0.35rem 0.5rem 0;
         font-size: 0.8rem;
@@ -1311,8 +1325,14 @@ footer a:hover {
         font-weight: 400;
     }
 
+    /* Hide duration and year for series rows in mobile */
+    tr.series-row td:nth-child(7),
+    tr.series-row td:nth-child(8) {
+        display: none !important;
+    }
+
     /* Add bullet separator before Year */
-    td:nth-child(8)::before {
+    tr:not(.series-row) td:nth-child(8)::before {
         content: "•";
         margin-right: 0.35rem;
         color: #ccc;
