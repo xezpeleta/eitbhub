@@ -211,6 +211,23 @@ main {
     gap: 0;
 }
 
+/* Hide button-based filters on desktop - use dropdowns instead */
+.filter-segmented,
+.filter-chips,
+.search-input-wrapper,
+.clear-filters-btn {
+    display: none;
+}
+
+/* Show original select dropdowns on desktop */
+.filter-group select {
+    display: block;
+}
+
+.filter-group input#search-input {
+    display: block;
+}
+
 .filters-header {
     display: none;
     /* Hidden on desktop by default */
@@ -898,13 +915,258 @@ footer a:hover {
         cursor: pointer;
     }
 
+    /* Show button-based filters on mobile, hide selects */
+    .filter-segmented,
+    .filter-chips,
+    .clear-filters-btn {
+        display: flex;
+    }
+
+    .search-input-wrapper {
+        display: block;
+    }
+
+    .filter-group select {
+        display: none !important;
+    }
+
     /* Mobile specific adjustment for filter groups inside modal */
     .filter-modal-body .filter-group {
         padding: 0 1.5rem;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         box-sizing: border-box;
         width: 100%;
         /* Ensure padding doesn't cause overflow */
+    }
+
+    /* Filter group labels with icons */
+    .filter-modal-body .filter-group label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .filter-modal-body .filter-group label svg {
+        flex-shrink: 0;
+        opacity: 0.7;
+    }
+
+    /* Search Input Wrapper */
+    .search-input-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .search-input-wrapper input {
+        width: 100%;
+        padding: 0.75rem 3rem 0.75rem 1rem;
+        font-size: 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        box-sizing: border-box;
+        min-height: 48px;
+    }
+
+    .search-input-wrapper input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    .search-clear-btn {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        padding: 0.5rem;
+        cursor: pointer;
+        color: var(--secondary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+    }
+
+    .search-clear-btn:hover,
+    .search-clear-btn:active {
+        background-color: #f0f0f0;
+    }
+
+    /* Segmented Control (for exclusive selections) */
+    .filter-segmented {
+        display: flex;
+        flex-wrap: nowrap;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+        width: 100%;
+    }
+
+    .filter-segmented-btn {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 0.75rem 0.35rem;
+        border: none;
+        background: white;
+        color: var(--text-color);
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+        min-height: 44px;
+        border-right: 1px solid var(--border-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .filter-segmented-btn:last-child {
+        border-right: none;
+    }
+
+    .filter-segmented-btn svg {
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+    }
+
+    .filter-segmented-btn:active {
+        transform: scale(0.98);
+    }
+
+    .filter-segmented-btn.active {
+        background: var(--primary-color);
+        color: white;
+        font-weight: 600;
+    }
+
+    /* Platform-specific colors for segmented control */
+    .filter-segmented-platforms .filter-segmented-btn[data-platform="primeran"].active {
+        background: #1a1a1a;
+        color: #ffffff;
+    }
+
+    .filter-segmented-platforms .filter-segmented-btn[data-platform="makusi"].active {
+        background: #00E676;
+        color: #000000;
+    }
+
+    .filter-segmented-platforms .filter-segmented-btn[data-platform="etbon"].active {
+        background: #FF5722;
+        color: #ffffff;
+    }
+
+    /* Filter Chips (for multi-select) */
+    .filter-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .filter-chip {
+        padding: 0.5rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 20px;
+        background: white;
+        color: var(--text-color);
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        min-height: 44px;
+        white-space: nowrap;
+    }
+
+    .filter-chip svg {
+        flex-shrink: 0;
+    }
+
+    .filter-chip:active {
+        transform: scale(0.95);
+    }
+
+    .filter-chip.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+        font-weight: 600;
+    }
+
+    /* Platform-specific chip colors when active */
+    .filter-chip[data-platform="primeran.eus"].active {
+        background: #1a1a1a;
+        border-color: #1a1a1a;
+        color: #ffffff;
+    }
+
+    .filter-chip[data-platform="makusi.eus"].active {
+        background: #00E676;
+        border-color: #00E676;
+        color: #000000;
+    }
+
+    .filter-chip[data-platform="etbon.eus"].active {
+        background: #FF5722;
+        border-color: #FF5722;
+        color: #ffffff;
+    }
+
+    /* Clear Filters Button */
+    .clear-filters-btn {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: white;
+        color: var(--secondary-color);
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 48px;
+        transition: all 0.2s;
+    }
+
+    .clear-filters-btn:hover,
+    .clear-filters-btn:active {
+        background: #f5f5f5;
+        border-color: var(--secondary-color);
+    }
+
+    .clear-filters-btn svg {
+        flex-shrink: 0;
+    }
+
+    /* Apply Button Enhancement */
+    .filter-apply-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .filter-apply-btn svg {
+        flex-shrink: 0;
     }
 
     /* First group margin */

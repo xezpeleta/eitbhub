@@ -253,6 +253,9 @@ function populateFilters() {
     populatePlatformFilter();
     populateMediaTypeFilter();
 
+    // Initialize filter button handlers
+    initializeFilterButtons();
+
     // Mobile filters toggle
     const filtersToggle = document.getElementById('filters-toggle');
     const filtersContainer = document.getElementById('filters-container');
@@ -281,11 +284,125 @@ function populateFilters() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
+
+    // Search clear button
+    const searchInput = document.getElementById('search-input');
+    const searchClearBtn = document.getElementById('search-clear');
+    
+    if (searchInput && searchClearBtn) {
+        searchInput.addEventListener('input', () => {
+            searchClearBtn.style.display = searchInput.value ? 'flex' : 'none';
+        });
+
+        searchClearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchClearBtn.style.display = 'none';
+            applyFilters();
+        });
+    }
+}
+
+// Get active filter value from segmented control (returns string)
+function getSegmentedFilterValue(filterId) {
+    const segmentedGroup = document.querySelector(`.filter-segmented[data-filter-id="${filterId}"]`);
+    if (!segmentedGroup) {
+        return '';
+    }
+    
+    const activeButton = segmentedGroup.querySelector('.filter-segmented-btn.active');
+    return activeButton ? activeButton.getAttribute('data-value') : '';
+}
+
+// Get active filter values from chip buttons (returns array for multi-select, string for single)
+function getChipFilterValues(filterId) {
+    const chipGroup = document.querySelector(`[data-filter-id="${filterId}"]`);
+    if (!chipGroup) {
+        // Fallback to select element
+        const select = document.getElementById(filterId);
+        return select ? select.value : '';
+    }
+
+    const isMultiSelect = chipGroup.getAttribute('data-multi-select') === 'true';
+    const activeChips = chipGroup.querySelectorAll('.filter-chip.active');
+    
+    if (isMultiSelect) {
+        // Return array of active values
+        return Array.from(activeChips).map(chip => chip.getAttribute('data-value'));
+    } else {
+        // Return single value (should only be one active)
+        return activeChips.length > 0 ? activeChips[0].getAttribute('data-value') : '';
+    }
+}
+
+// Initialize filter button event handlers
+function initializeFilterButtons() {
+    // Handle segmented controls (single select)
+    document.querySelectorAll('.filter-segmented').forEach(group => {
+        const filterId = group.getAttribute('data-filter-id');
+        const selectElement = document.getElementById(filterId);
+        
+        group.querySelectorAll('.filter-segmented-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // Deactivate all buttons in this group
+                group.querySelectorAll('.filter-segmented-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-pressed', 'false');
+                });
+                
+                // Activate clicked button
+                button.classList.add('active');
+                button.setAttribute('aria-pressed', 'true');
+                
+                // Update hidden select
+                if (selectElement) {
+                    selectElement.value = button.getAttribute('data-value');
+                }
+                
+                // Apply filters
+                applyFilters();
+            });
+        });
+    });
+
+    // Handle filter chips (multi-select)
+    document.querySelectorAll('.filter-chips').forEach(group => {
+        const filterId = group.getAttribute('data-filter-id');
+        const selectElement = document.getElementById(filterId);
+        const isMultiSelect = group.getAttribute('data-multi-select') === 'true';
+        
+        group.querySelectorAll('.filter-chip').forEach(button => {
+            button.addEventListener('click', () => {
+                if (isMultiSelect) {
+                    // Toggle this chip
+                    button.classList.toggle('active');
+                    button.setAttribute('aria-pressed', 
+                        button.classList.contains('active') ? 'true' : 'false');
+                } else {
+                    // Single select mode
+                    group.querySelectorAll('.filter-chip').forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.setAttribute('aria-pressed', 'false');
+                    });
+                    button.classList.add('active');
+                    button.setAttribute('aria-pressed', 'true');
+                }
+                
+                // Update hidden select (for single select filters)
+                if (selectElement && !isMultiSelect) {
+                    selectElement.value = button.getAttribute('data-value');
+                }
+                
+                // Apply filters
+                applyFilters();
+            });
+        });
+    });
 }
 
 // Populate type filter dropdown
 function populateTypeFilter() {
     const typeFilter = document.getElementById('type-filter');
+    
     // Collect distinct types from content. We intentionally hide the synthetic
     // "series" type from the Mota (Type) dropdown because series are represented
     // as grouped episode rows in the UI, not as standalone items that can be
@@ -302,6 +419,9 @@ function populateTypeFilter() {
         option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
         typeFilter.appendChild(option);
     });
+    
+    // Note: Type filter buttons are now hardcoded in HTML as a segmented control
+    // with Guztia, Filmak (movie), Serieak (episode), Zuzenekoak (live)
 }
 
 // Populate age rating filter
@@ -315,6 +435,9 @@ function populateAgeRatingFilter() {
         option.textContent = rating;
         ageFilter.appendChild(option);
     });
+    
+    // Note: Age rating filter buttons are now hardcoded in HTML as a segmented control
+    // with Guztia, Haurrak (kids: TP, +7, +12), Helduak (adults: +16, +18)
 }
 
 // Populate language filter
@@ -334,6 +457,9 @@ function populateLanguageFilter() {
         option.textContent = lang.toUpperCase();
         langFilter.appendChild(option);
     });
+    
+    // Note: Language filter buttons are now hardcoded in HTML as a segmented control
+    // with Guztia, Euskara (eu), Gaztelera (es), Frantsesa (fr), Ingelesa (en)
 }
 
 // Populate platform filter
@@ -365,6 +491,9 @@ function populatePlatformFilter() {
         option.textContent = displayName;
         platformFilter.appendChild(option);
     });
+    
+    // Note: Platform filter buttons are now hardcoded in HTML as a segmented control
+    // with Guztia, Primeran, Makusi, Etbon (with brand colors)
 }
 
 // Populate media type filter
@@ -395,15 +524,13 @@ function populateMediaTypeFilter() {
 // Apply filters
 function applyFilters() {
     const searchTerm = document.getElementById('search-input').value.toLowerCase();
-    const typeFilter = document.getElementById('type-filter').value;
+    
+    // Get filter values from buttons (for mobile) or selects (for desktop)
+    const typeFilter = getSegmentedFilterValue('type-filter') || document.getElementById('type-filter').value;
     const restrictionFilter = document.getElementById('restriction-filter').value;
-    const ageRatingFilter = document.getElementById('age-rating-filter').value;
-    const languageFilter = document.getElementById('language-filter').value;
-
-    // Get platform filter
-    const platformFilter = document.getElementById('platform-filter').value;
-
-    // Get media type filter
+    const ageRatingFilter = getSegmentedFilterValue('age-rating-filter') || document.getElementById('age-rating-filter').value;
+    const languageFilter = getSegmentedFilterValue('language-filter') || document.getElementById('language-filter').value;
+    const platformFilter = getSegmentedFilterValue('platform-filter') || document.getElementById('platform-filter').value;
     const mediaTypeFilter = document.getElementById('media-type-filter').value;
 
     // Filter standalone content
@@ -462,9 +589,11 @@ function matchesFilters(item, searchTerm, typeFilter, restrictionFilter, ageRati
         }
     }
 
-    // Type filter
-    if (typeFilter && item.type !== typeFilter) {
-        return false;
+    // Type filter (single select string)
+    if (typeFilter && typeFilter !== '') {
+        if (item.type !== typeFilter) {
+            return false;
+        }
     }
 
     // Restriction filter
@@ -475,20 +604,37 @@ function matchesFilters(item, searchTerm, typeFilter, restrictionFilter, ageRati
         if (restrictionFilter === 'null' && isRestricted !== null) return false;
     }
 
-    // Age rating filter
-    if (ageRatingFilter && item.age_rating !== ageRatingFilter) {
-        return false;
+    // Age rating filter (single select with groups: kids or adults)
+    if (ageRatingFilter && ageRatingFilter !== '') {
+        if (ageRatingFilter === 'kids') {
+            // Haurrak: TP, +7, +12 (or 7, 12 without +)
+            const kidsRatings = ['TP', '+7', '+12', '7', '12'];
+            if (!kidsRatings.includes(item.age_rating)) {
+                return false;
+            }
+        } else if (ageRatingFilter === 'adults') {
+            // Helduak: +16, +18 (or 16, 18 without +)
+            const adultRatings = ['+16', '+18', '16', '18'];
+            if (!adultRatings.includes(item.age_rating)) {
+                return false;
+            }
+        } else {
+            // Direct age rating match (for desktop dropdown compatibility)
+            if (item.age_rating !== ageRatingFilter) {
+                return false;
+            }
+        }
     }
 
-    // Language filter
-    if (languageFilter) {
+    // Language filter (single select)
+    if (languageFilter && languageFilter !== '') {
         if (!item.languages || !Array.isArray(item.languages) || !item.languages.includes(languageFilter)) {
             return false;
         }
     }
 
-    // Platform filter - check if platform array includes the filter value
-    if (platformFilter) {
+    // Platform filter (single select)
+    if (platformFilter && platformFilter !== '') {
         let itemPlatforms = [];
         if (Array.isArray(item.platform)) {
             itemPlatforms = item.platform;
@@ -502,6 +648,7 @@ function matchesFilters(item, searchTerm, typeFilter, restrictionFilter, ageRati
                 itemPlatforms = [item.platform];
             }
         }
+        
         if (!itemPlatforms.includes(platformFilter)) {
             return false;
         }
@@ -1161,13 +1308,41 @@ function renderPagination(pageCount, totalRows, startIndex, endIndex) {
 
 // Clear filters
 function clearFilters() {
-    document.getElementById('search-input').value = '';
+    // Clear search input
+    const searchInput = document.getElementById('search-input');
+    const searchClearBtn = document.getElementById('search-clear');
+    searchInput.value = '';
+    if (searchClearBtn) {
+        searchClearBtn.style.display = 'none';
+    }
+
+    // Clear select elements
     document.getElementById('type-filter').value = '';
     document.getElementById('restriction-filter').value = '';
     document.getElementById('age-rating-filter').value = '';
     document.getElementById('language-filter').value = '';
     document.getElementById('platform-filter').value = '';
     document.getElementById('media-type-filter').value = '';
+
+    // Reset all segmented controls to first button (Guztia)
+    document.querySelectorAll('.filter-segmented').forEach(group => {
+        group.querySelectorAll('.filter-segmented-btn').forEach((btn, index) => {
+            if (index === 0) {
+                btn.classList.add('active');
+                btn.setAttribute('aria-pressed', 'true');
+            } else {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-pressed', 'false');
+            }
+        });
+    });
+
+    // Deactivate all chip buttons
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.classList.remove('active');
+        chip.setAttribute('aria-pressed', 'false');
+    });
+
     currentPage = 1;
     applyFilters();
 }
