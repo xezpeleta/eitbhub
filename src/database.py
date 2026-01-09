@@ -25,6 +25,7 @@ class ContentDatabase:
         self.conn.row_factory = sqlite3.Row
         self._create_tables()
         self._migrate_add_platform()
+        self._migrate_add_dates()
     
     def _create_tables(self):
         """Create database tables if they don't exist"""
@@ -50,6 +51,8 @@ class ContentDatabase:
                 restriction_type TEXT,  -- 'manifest_403', 'manifest_404', etc.
                 last_checked TIMESTAMP,
                 metadata TEXT,  -- JSON blob with full API response
+                available_until TIMESTAMP,  -- When content expires
+                publication_date TIMESTAMP,  -- When content was originally published
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -208,6 +211,85 @@ class ContentDatabase:
                 self.conn.commit()
                 print("  ✓ Migration complete: Set platform for existing records")
     
+    def _migrate_add_dates(self):
+        """
+        Migrate database to add available_until and publication_date columns.
+        Populates from existing metadata JSON.
+        """
+        cursor = self.conn.cursor()
+        
+        # Check if columns exist
+        cursor.execute("PRAGMA table_info(content)")
+        columns = [row[1] for row in cursor.fetchall()]
+        
+        needs_migration = False
+        if 'available_until' not in columns:
+            cursor.execute("ALTER TABLE content ADD COLUMN available_until TIMESTAMP")
+            needs_migration = True
+        
+        if 'publication_date' not in columns:
+            cursor.execute("ALTER TABLE content ADD COLUMN publication_date TIMESTAMP")
+            needs_migration = True
+        
+        if needs_migration:
+            print("Migrating database: Extracting dates from metadata...")
+            self._populate_dates_from_metadata()
+            
+            # Create indexes for the new columns
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_content_available_until ON content(available_until)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_content_publication_date ON content(publication_date DESC)
+            """)
+            
+            print("  ✓ Migration complete: Added available_until and publication_date")
+        
+        self.conn.commit()
+    
+    def _populate_dates_from_metadata(self):
+        """Extract dates from metadata JSON and populate dedicated columns"""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT id, metadata FROM content")
+        
+        updated_count = 0
+        for row in cursor.fetchall():
+            content_id, metadata_json = row
+            
+            if not metadata_json:
+                continue
+            
+            try:
+                metadata = json.loads(metadata_json)
+                
+                # Extract available_until
+                available_until = metadata.get('available_until')
+                
+                # Extract publication_date - prefer content date_created, fallback to oldest image
+                publication_date = metadata.get('date_created')
+                if not publication_date:
+                    images = metadata.get('images', [])
+                    if images:
+                        image_dates = [img.get('date_created') for img in images if img.get('date_created')]
+                        if image_dates:
+                            publication_date = min(image_dates)
+                
+                # Update if we have at least one date
+                if available_until or publication_date:
+                    cursor.execute("""
+                        UPDATE content 
+                        SET available_until = ?, publication_date = ?
+                        WHERE id = ?
+                    """, (available_until, publication_date, content_id))
+                    updated_count += 1
+            
+            except (json.JSONDecodeError, TypeError) as e:
+                # Skip malformed metadata
+                continue
+        
+        self.conn.commit()
+        print(f"  ✓ Updated {updated_count} records with date information")
+    
     def upsert_content(self, content_data: Dict[str, Any]) -> int:
         """
         Insert or update content record
@@ -238,6 +320,21 @@ class ContentDatabase:
         restriction_type = content_data.get('restriction_type')
         metadata = content_data.get('metadata', {})
         last_checked = datetime.now().isoformat()
+        
+        # Extract dates from metadata
+        available_until = None
+        publication_date = None
+        if isinstance(metadata, dict):
+            available_until = metadata.get('available_until')
+            publication_date = metadata.get('date_created')
+            
+            # Fallback to oldest image date if no date_created
+            if not publication_date:
+                images = metadata.get('images', [])
+                if images:
+                    image_dates = [img.get('date_created') for img in images if img.get('date_created')]
+                    if image_dates:
+                        publication_date = min(image_dates)
         
         # Normalize platform to JSON array
         # Convert string to list if needed
@@ -319,9 +416,10 @@ class ContentDatabase:
             INSERT INTO content (
                 slug, platform, title, type, duration, year, genres,
                 series_slug, series_title, season_number, episode_number,
-                is_geo_restricted, restriction_type, last_checked, metadata
+                is_geo_restricted, restriction_type, last_checked, metadata,
+                available_until, publication_date
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(slug) DO UPDATE SET
                 platform = excluded.platform,
                 title = COALESCE(excluded.title, title),
@@ -337,11 +435,14 @@ class ContentDatabase:
                 restriction_type = excluded.restriction_type,
                 last_checked = excluded.last_checked,
                 metadata = excluded.metadata,
+                available_until = COALESCE(excluded.available_until, available_until),
+                publication_date = COALESCE(excluded.publication_date, publication_date),
                 updated_at = CURRENT_TIMESTAMP
         """, (
             slug, platform_json, title, content_type, duration, year, genres,
             series_slug, series_title, season_number, episode_number,
-            is_geo_restricted, restriction_type, last_checked, metadata_json
+            is_geo_restricted, restriction_type, last_checked, metadata_json,
+            available_until, publication_date
         ))
         
         self.conn.commit()

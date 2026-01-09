@@ -211,21 +211,57 @@ main {
     gap: 0;
 }
 
-/* Hide button-based filters on desktop - use dropdowns instead */
+/* Desktop: Hide button-based filters, show dropdowns */
 .filter-segmented,
-.filter-chips,
-.search-input-wrapper,
+.filter-chips {
+    display: none;
+}
+
 .clear-filters-btn {
     display: none;
 }
 
-/* Show original select dropdowns on desktop */
-.filter-group select {
+/* Desktop: Show search wrapper (contains the input) */
+.search-input-wrapper {
     display: block;
 }
 
-.filter-group input#search-input {
+.search-input-wrapper input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    color: var(--secondary-color);
+}
+
+/* Desktop: Show original select dropdowns (override inline styles) */
+.filter-group select,
+.filter-group button#clear-filters {
+    display: block !important;
+}
+
+.filter-group label {
     display: block;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.filter-group label svg {
+    display: none;
 }
 
 .filters-header {
@@ -264,7 +300,7 @@ main {
     font-size: 0.9rem;
 }
 
-.filter-group button {
+.filter-group button#clear-filters {
     padding: 0.5rem 1rem;
     background: var(--secondary-color);
     color: white;
@@ -274,7 +310,7 @@ main {
     font-size: 0.9rem;
 }
 
-.filter-group button:hover {
+.filter-group button#clear-filters:hover {
     background: #555;
 }
 
@@ -915,19 +951,35 @@ footer a:hover {
         cursor: pointer;
     }
 
-    /* Show button-based filters on mobile, hide selects */
+    /* Mobile: Show button-based filters, hide selects */
     .filter-segmented,
     .filter-chips,
     .clear-filters-btn {
         display: flex;
     }
 
-    .search-input-wrapper {
-        display: block;
+    .filter-group select,
+    .filter-group button#clear-filters {
+        display: none !important;
     }
 
-    .filter-group select {
-        display: none !important;
+    /* Mobile: Style labels with icons */
+    .filter-group label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .filter-group label svg {
+        display: block;
+        flex-shrink: 0;
+        opacity: 0.7;
     }
 
     /* Mobile specific adjustment for filter groups inside modal */
