@@ -257,7 +257,8 @@ class JSONExporter:
                         'access_restriction': self._extract_from_metadata(item, 'access_restriction'),
                         
                         # Medium priority metadata
-                        'available_until': self._extract_from_metadata(item, 'available_until'),
+                        'available_until': item.get('available_until'),  # Now from dedicated column
+                        'publication_date': item.get('publication_date'),  # New: from dedicated column
                         'languages': self._extract_languages(item),
                         'platform': self._parse_platform(item.get('platform', 'primeran.eus')),
                         'media_type': self._extract_from_metadata(item, 'media_type'),
@@ -355,7 +356,8 @@ class JSONExporter:
                         'thumbnail': self._extract_from_metadata(item, 'images[0].file'),
                         'age_rating': self._extract_from_metadata(item, 'age_rating.label') or self._extract_from_metadata(item, 'age_rating.age'),
                         'access_restriction': self._extract_from_metadata(item, 'access_restriction'),
-                        'available_until': self._extract_from_metadata(item, 'available_until'),
+                        'available_until': item.get('available_until'),  # Now from dedicated column
+                        'publication_date': item.get('publication_date'),  # New: from dedicated column
                         'languages': self._extract_languages(item),
                         'platform': self._parse_platform(item.get('platform', 'primeran.eus')),
                         'media_type': self._extract_from_metadata(item, 'media_type'),
