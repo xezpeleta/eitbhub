@@ -108,6 +108,10 @@ async function loadContent() {
         filteredGroupedContent = JSON.parse(JSON.stringify(groupedContent));
 
         populateFilters();
+        
+        // Apply default sort by publication_date (most recent first)
+        sortContent('publication_date', 'desc', true);
+        
         renderTable();
         updateResultsCount();
     } catch (error) {
@@ -700,16 +704,20 @@ function sortContent(field, direction = 'asc', updateUI = true) {
 
 // Compare values for sorting
 function compareValues(aVal, bVal, direction) {
-    // Handle null/undefined
-    if (aVal == null) aVal = '';
-    if (bVal == null) bVal = '';
+    // Handle null/undefined - push nulls to the end regardless of direction
+    const aIsNull = aVal == null || aVal === '';
+    const bIsNull = bVal == null || bVal === '';
+    
+    if (aIsNull && bIsNull) return 0;
+    if (aIsNull) return 1;  // a goes after b
+    if (bIsNull) return -1; // b goes after a
 
     // Handle numbers
     if (typeof aVal === 'number' && typeof bVal === 'number') {
         return direction === 'asc' ? aVal - bVal : bVal - aVal;
     }
 
-    // Handle strings
+    // Handle strings (including ISO date strings)
     aVal = String(aVal).toLowerCase();
     bVal = String(bVal).toLowerCase();
 
