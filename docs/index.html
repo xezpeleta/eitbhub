@@ -1,391 +1,84 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="eu">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EITBHub</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>EITBHub - Etxea</title>
+    <link rel="stylesheet" href="css/home.css">
 </head>
 
 <body>
-    <header>
-        <div class="container">
-            <h1><a href="index.html">EITB<span class="logo-accent">Hub</span></a></h1>
-            <p class="subtitle">EITBko edukia guztia leku bakar batetik</p>
+    <header class="home-header">
+        <div class="header-container">
+            <h1 class="logo">
+                <a href="index.html">EITB<span class="logo-accent">Hub</span></a>
+            </h1>
+            <nav class="main-nav">
+                <a href="content.html" class="nav-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    <span>Guztia arakatu</span>
+                </a>
+                <a href="stats.html" class="nav-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Estatistikak</span>
+                </a>
+            </nav>
         </div>
     </header>
 
-    <main class="container">
-        <section class="filters-section">
-            <!-- Filters Header / Toggle for Mobile -->
-            <!-- Filters Header / Toggle for Mobile -->
-            <div class="filters-header">
-                <div class="mobile-results-info">
-                    <span id="mobile-results-count">0</span> edukia
-                </div>
-                <div class="mobile-actions">
-                    <a href="stats.html" class="icon-btn" aria-label="Estatistikak">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="20" x2="18" y2="10"></line>
-                            <line x1="12" y1="20" x2="12" y2="4"></line>
-                            <line x1="6" y1="20" x2="6" y2="14"></line>
-                        </svg>
-                    </a>
-                    <button id="filters-toggle" class="icon-btn" aria-expanded="false" aria-controls="filters-container"
-                        aria-label="Filtroak ireki">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                    </button>
-                </div>
+    <main>
+        <!-- Loading indicator -->
+        <div id="loading-indicator" class="loading-indicator">
+            <div class="spinner"></div>
+            <p>Edukia kargatzen...</p>
+        </div>
+
+        <!-- Hero Banner Section -->
+        <section id="hero-banner" class="hero-banner" style="display: none;">
+            <div class="hero-content">
+                <h2 id="hero-title" class="hero-title"></h2>
+                <p id="hero-description" class="hero-description"></p>
+                <div id="hero-meta" class="hero-meta"></div>
+                <button id="hero-view-btn" class="hero-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="10 8 16 12 10 16 10 8"></polygon>
+                    </svg>
+                    Informazio gehiago
+                </button>
             </div>
-
-            <div id="filters-container" class="filters-container">
-                <!-- Mobile Filter Header (Hidden on Desktop) -->
-                <div class="filter-modal-header">
-                    <h3>Filtroak</h3>
-                    <button id="filter-modal-close" class="filter-modal-close">×</button>
-                </div>
-
-                <!-- Scrollable content wrapper -->
-                <div class="filter-modal-body">
-                    <!-- Search Filter -->
-                    <div class="filter-group">
-                        <label for="search-input">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <path d="m21 21-4.35-4.35"></path>
-                            </svg>
-                            Bilatu
-                        </label>
-                        <div class="search-input-wrapper">
-                            <input type="text" id="search-input" placeholder="Bilatu izenburuan...">
-                            <button type="button" id="search-clear" class="search-clear-btn" aria-label="Garbitu bilaketa" style="display: none;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <path d="m15 9-6 6"></path>
-                                    <path d="m9 9 6 6"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Media Type Filter -->
-                    <div class="filter-group">
-                        <label>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"></path>
-                                <rect x="2" y="6" width="14" height="12" rx="2"></rect>
-                            </svg>
-                            Media mota
-                        </label>
-                        <div class="filter-segmented" role="group" aria-label="Media type filter" data-filter-id="media-type-filter">
-                            <button type="button" class="filter-segmented-btn active" data-value="" aria-pressed="true">
-                                Guztia
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="audio" aria-pressed="false">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M2 10v3"></path>
-                                    <path d="M6 6v11"></path>
-                                    <path d="M10 3v18"></path>
-                                    <path d="M14 8v7"></path>
-                                    <path d="M18 5v13"></path>
-                                    <path d="M22 10v3"></path>
-                                </svg>
-                                Audio
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="video" aria-pressed="false">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"></path>
-                                    <rect x="2" y="6" width="14" height="12" rx="2"></rect>
-                                </svg>
-                                Bideo
-                            </button>
-                        </div>
-                        <select id="media-type-filter">
-                            <option value="">Guztia</option>
-                        </select>
-                    </div>
-
-                    <!-- Geo-Restriction Filter -->
-                    <div class="filter-group">
-                        <label>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
-                                <path d="M2 12h20"></path>
-                            </svg>
-                            Geo-Murrizketa
-                        </label>
-                        <div class="filter-segmented" role="group" aria-label="Geo-restriction filter" data-filter-id="restriction-filter">
-                            <button type="button" class="filter-segmented-btn active" data-value="" aria-pressed="true">
-                                Guztia
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="false" aria-pressed="false">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
-                                    <path d="M2 12h20"></path>
-                                </svg>
-                                Murriztu gabea
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="true" aria-pressed="false">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
-                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                </svg>
-                                Murriztua
-                            </button>
-                        </div>
-                        <select id="restriction-filter">
-                            <option value="">Guztia</option>
-                            <option value="true">Murriztua</option>
-                            <option value="false">Murriztu gabea</option>
-                            <option value="null">Ezezaguna</option>
-                        </select>
-                    </div>
-
-                    <!-- Type Filter -->
-                    <div class="filter-group">
-                        <label>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <rect width="20" height="15" x="2" y="7" rx="2" ry="2"></rect>
-                                <polyline points="17 2 12 7 7 2"></polyline>
-                            </svg>
-                            Mota
-                        </label>
-                        <div class="filter-segmented" role="group" aria-label="Type filter" data-filter-id="type-filter">
-                            <button type="button" class="filter-segmented-btn active" data-value="" aria-pressed="true">
-                                Guztia
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="movie" aria-pressed="false">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <rect width="18" height="18" x="3" y="3" rx="2"></rect>
-                                    <path d="M7 3v18"></path>
-                                    <path d="M3 7.5h4"></path>
-                                    <path d="M3 12h18"></path>
-                                    <path d="M3 16.5h4"></path>
-                                    <path d="M17 3v18"></path>
-                                    <path d="M17 7.5h4"></path>
-                                    <path d="M17 16.5h4"></path>
-                                </svg>
-                                Filmak
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="episode" aria-pressed="false">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <rect width="20" height="15" x="2" y="7" rx="2" ry="2"></rect>
-                                    <polyline points="17 2 12 7 7 2"></polyline>
-                                </svg>
-                                Serieak
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="live" aria-pressed="false">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <circle cx="12" cy="12" r="2"></circle>
-                                </svg>
-                                Zuzenekoak
-                            </button>
-                        </div>
-                        <select id="type-filter">
-                            <option value="">Guztia</option>
-                        </select>
-                    </div>
-
-                    <!-- Age Rating Filter -->
-                    <div class="filter-group">
-                        <label>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path>
-                            </svg>
-                            Adina
-                        </label>
-                        <div class="filter-segmented" role="group" aria-label="Age rating filter" data-filter-id="age-rating-filter">
-                            <button type="button" class="filter-segmented-btn active" data-value="" aria-pressed="true">
-                                Guztia
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="kids" data-age-group="kids" aria-pressed="false">
-                                Haurrak
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="adults" data-age-group="adults" aria-pressed="false">
-                                Helduak
-                            </button>
-                        </div>
-                        <select id="age-rating-filter">
-                            <option value="">Guztia</option>
-                        </select>
-                    </div>
-
-                    <!-- Language Filter -->
-                    <div class="filter-group">
-                        <label>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="m5 8 6 6"></path>
-                                <path d="m4 14 6-6 2-3"></path>
-                                <path d="M2 5h12"></path>
-                                <path d="M7 2h1"></path>
-                                <path d="m22 22-5-10-5 10"></path>
-                                <path d="M14 18h6"></path>
-                            </svg>
-                            Hizkuntza
-                        </label>
-                        <div class="filter-segmented" role="group" aria-label="Language filter" data-filter-id="language-filter">
-                            <button type="button" class="filter-segmented-btn active" data-value="" aria-pressed="true">
-                                Guztia
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="eu" aria-pressed="false">
-                                Euskara
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="es" aria-pressed="false">
-                                Gaztelera
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="fr" aria-pressed="false">
-                                Frantsesa
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="en" aria-pressed="false">
-                                Ingelesa
-                            </button>
-                        </div>
-                        <select id="language-filter">
-                            <option value="">Guztiak</option>
-                        </select>
-                    </div>
-
-                    <!-- Platform Filter -->
-                    <div class="filter-group">
-                        <label>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <rect width="7" height="9" x="3" y="3" rx="1"></rect>
-                                <rect width="7" height="5" x="14" y="3" rx="1"></rect>
-                                <rect width="7" height="9" x="14" y="12" rx="1"></rect>
-                                <rect width="7" height="5" x="3" y="16" rx="1"></rect>
-                            </svg>
-                            Plataforma
-                        </label>
-                        <div class="filter-segmented filter-segmented-platforms" role="group" aria-label="Platform filter" data-filter-id="platform-filter">
-                            <button type="button" class="filter-segmented-btn active" data-value="" aria-pressed="true">
-                                Guztia
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="primeran.eus" data-platform="primeran" aria-pressed="false">
-                                Primeran
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="makusi.eus" data-platform="makusi" aria-pressed="false">
-                                Makusi
-                            </button>
-                            <button type="button" class="filter-segmented-btn" data-value="etbon.eus" data-platform="etbon" aria-pressed="false">
-                                Etbon
-                            </button>
-                        </div>
-                        <select id="platform-filter">
-                            <option value="">Guztia</option>
-                        </select>
-                    </div>
-
-                    <!-- Clear Filters Button -->
-                    <div class="filter-group">
-                        <button id="clear-filters" class="clear-filters-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M3 6h18"></path>
-                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                            </svg>
-                            Ezabatu filtroak
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Mobile Filter Actions (Hidden on Desktop) -->
-                <div class="filter-modal-actions">
-                    <button id="filter-apply-btn" class="filter-apply-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Emaitzak ikusi
-                    </button>
-                </div>
-            </div>
+            <div class="hero-gradient"></div>
         </section>
 
-        <section class="table-section">
-            <div class="table-info">
-                Aurkitutako <span id="results-count">0</span>
-            </div>
-            <div class="table-wrapper">
-                <table id="content-table">
-                    <thead>
-                        <tr>
-                            <!-- 
-                                COLUMN STRUCTURE (IMPORTANT: Keep in sync with renderContentRow() in content.js):
-                                1. Empty (expand button for series rows)
-                                2. Irudia (Image/Thumbnail)
-                                3. Izenburua (Title)
-                                4. Mota (Type)
-                                5. Adina (Age Rating)
-                                6. Hizkuntza(k) (Languages)
-                                7. Iraupena (Duration)
-                                8. Urtea (Year)
-                                9. Geo-Murrizketa (Geo-Restriction)
-                                10. Plataforma (Platform) - LAST COLUMN
-                                
-                                WARNING: If you add/remove/reorder columns, update:
-                                - This HTML header
-                                - renderContentRow() in content.js (td elements order)
-                                - renderSeriesRow() in content.js (td elements order)
-                                - Any CSS nth-child() selectors in style.css
-                            -->
-                            <th style="width: 40px;"></th>
-                            <th style="width: 80px;">Irudia</th>
-                            <th data-sort="title">Izenburua <span class="sort-indicator"></span></th>
-                            <th data-sort="type">Mota <span class="sort-indicator"></span></th>
-                            <th>Adina</th>
-                            <th>Hizkuntza(k)</th>
-                            <th data-sort="duration">Iraupena <span class="sort-indicator"></span></th>
-                            <th data-sort="year">Urtea <span class="sort-indicator"></span></th>
-                            <th data-sort="is_geo_restricted">Geo-Murrizketa <span class="sort-indicator"></span></th>
-                            <th data-sort="platform">Plataforma <span class="sort-indicator"></span></th>
-                        </tr>
-                    </thead>
-                    <tbody id="content-tbody">
-                        <tr>
-                            <td colspan="10" class="loading">Loading content...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="pagination" id="pagination">
-                <div class="pagination-left">
-                    <label for="page-size">Elementu orrialdeko:</label>
-                    <select id="page-size">
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100" selected>100</option>
-                        <option value="200">200</option>
-                    </select>
-                </div>
-                <div class="pagination-right">
-                    <button id="first-page">« Lehenengoa</button>
-                    <button id="prev-page">‹ Aurrekoa</button>
-                    <span id="page-info">1 / 1 orrialdea</span>
-                    <button id="next-page">Hurrengoa ›</button>
-                    <button id="last-page">Azkena »</button>
-                </div>
-            </div>
+        <!-- Category Rows -->
+        <section id="categories-container" class="categories-container">
+            <!-- Will be populated by JavaScript -->
         </section>
     </main>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2026 EITBHub |
-                <a href="https://github.com/xezpeleta/eitbhub">Source Code</a> |
-                <a href="stats.html">Show stats</a>
+    <footer class="home-footer">
+        <div class="footer-container">
+            <p>&copy; 2026 EITBHub | 
+                <a href="https://github.com/xezpeleta/eitbhub" target="_blank" rel="noopener">Source Code</a> | 
+                <a href="stats.html">Estatistikak</a>
             </p>
+            <p class="footer-note">EITBko edukia guztia leku bakar batetik</p>
         </div>
     </footer>
 
-    <!-- Mobile Full Screen Detail Modal -->
+    <!-- Mobile Detail Modal (reused from content.html) -->
     <div id="mobile-detail-modal" class="mobile-detail-modal" aria-hidden="true">
         <button id="mobile-nav-prev" class="mobile-nav-btn mobile-nav-prev" aria-label="Previous Item">‹</button>
         <button id="mobile-nav-next" class="mobile-nav-btn mobile-nav-next" aria-label="Next Item">›</button>
@@ -409,7 +102,7 @@
         </div>
     </div>
 
-    <script src="js/content.js"></script>
+    <script src="js/home.js"></script>
 </body>
 
 </html>
