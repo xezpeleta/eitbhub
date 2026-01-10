@@ -244,7 +244,7 @@ class JSONExporter:
                         'genres': json.loads(item['genres']) if item['genres'] else [],
                         'series_slug': item['series_slug'],
                         'series_title': item['series_title'],
-                        'season_number': item['season_number'],
+                        'season_number': item.get('season_number_normalized') or item['season_number'],
                         'episode_number': item['episode_number'],
                         'is_geo_restricted': bool(item['is_geo_restricted']) if item['is_geo_restricted'] is not None else None,
                         'restriction_type': item['restriction_type'],
@@ -347,7 +347,7 @@ class JSONExporter:
                         'title': item['title'],
                         'type': item['type'],
                         'series_title': item['series_title'],
-                        'season_number': item['season_number'],
+                        'season_number': item.get('season_number_normalized') or item['season_number'],
                         'episode_number': item['episode_number'],
                         'last_checked': item['last_checked'],
                         
