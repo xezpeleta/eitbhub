@@ -1252,6 +1252,30 @@ function formatDuration(seconds) {
     return `${minutes}:${String(secs).padStart(2, '0')}`;
 }
 
+// Check if content should show expiration date (within next 12 months)
+function shouldShowExpirationDate(availableUntil) {
+    if (!availableUntil) return false;
+    
+    const today = new Date();
+    const expiryDate = new Date(availableUntil);
+    const twelveMonthsFromNow = new Date(today);
+    twelveMonthsFromNow.setMonth(twelveMonthsFromNow.getMonth() + 12);
+    
+    return expiryDate >= today && expiryDate <= twelveMonthsFromNow;
+}
+
+// Format date as YYYY/MM/DD
+function formatExpirationDate(availableUntil) {
+    if (!availableUntil) return '';
+    
+    const date = new Date(availableUntil);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}/${month}/${day}`;
+}
+
 // Escape HTML
 function escapeHtml(text) {
     if (text == null) return '';
@@ -1697,7 +1721,7 @@ function openMobileDetail(item) {
     if (item.duration) metaContainer.innerHTML += `<span>${formatDuration(item.duration)}</span> • `;
     if (item.age_rating) metaContainer.innerHTML += `<span class="age-rating-badge">${item.age_rating}</span>`;
 
-    // Badges (Platform, Geo)
+    // Badges (Platform, Geo, Expiration)
     const badgesContainer = document.getElementById('mobile-detail-badges');
     badgesContainer.innerHTML = '';
 
@@ -1719,6 +1743,12 @@ function openMobileDetail(item) {
     // Geo
     if (item.is_geo_restricted === true) {
         badgesContainer.innerHTML += `<span class="status-badge status-restricted">Geo-Murriztua</span>`;
+    }
+
+    // Expiration date (if within next 12 months)
+    if (shouldShowExpirationDate(item.available_until)) {
+        const formattedDate = formatExpirationDate(item.available_until);
+        badgesContainer.innerHTML += `<span class="expiration-badge">Noiz arte: ${formattedDate}</span>`;
     }
 
     // Link

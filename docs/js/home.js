@@ -356,6 +356,12 @@ function openDetailModal(item) {
         badgesHtml += '<span class="status-badge status-restricted">Geo-Murriztua</span>';
     }
     
+    // Expiration date (if within next 12 months)
+    if (shouldShowExpirationDate(item.available_until)) {
+        const formattedDate = formatExpirationDate(item.available_until);
+        badgesHtml += `<span class="expiration-badge">Noiz arte: ${formattedDate}</span>`;
+    }
+    
     badgesContainer.innerHTML = badgesHtml;
     
     // Link
@@ -414,6 +420,18 @@ function openSeriesModal(series) {
             return `<span class="platform-badge platform-badge-${platformName}">${platformName.charAt(0).toUpperCase() + platformName.slice(1)}</span>`;
         }).join(' ');
     }
+    
+    // Check if any episode has expiration date within next 12 months
+    const earliestExpiration = series.episodes
+        .filter(ep => shouldShowExpirationDate(ep.available_until))
+        .map(ep => new Date(ep.available_until))
+        .sort((a, b) => a - b)[0];
+    
+    if (earliestExpiration) {
+        const formattedDate = formatExpirationDate(earliestExpiration.toISOString());
+        badgesHtml += `<span class="expiration-badge">Noiz arte: ${formattedDate}</span>`;
+    }
+    
     badgesContainer.innerHTML = badgesHtml;
     
     // Hide link button for series
@@ -558,6 +576,30 @@ function formatDuration(seconds) {
         return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
     return `${minutes}:${String(secs).padStart(2, '0')}`;
+}
+
+// Check if content should show expiration date (within next 12 months)
+function shouldShowExpirationDate(availableUntil) {
+    if (!availableUntil) return false;
+    
+    const today = new Date();
+    const expiryDate = new Date(availableUntil);
+    const twelveMonthsFromNow = new Date(today);
+    twelveMonthsFromNow.setMonth(twelveMonthsFromNow.getMonth() + 12);
+    
+    return expiryDate >= today && expiryDate <= twelveMonthsFromNow;
+}
+
+// Format date as YYYY/MM/DD
+function formatExpirationDate(availableUntil) {
+    if (!availableUntil) return '';
+    
+    const date = new Date(availableUntil);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}/${month}/${day}`;
 }
 
 function escapeHtml(text) {
