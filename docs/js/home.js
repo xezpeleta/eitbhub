@@ -232,7 +232,7 @@ function renderHeroBanner(item) {
     let metaHtml = '';
     if (item.year) metaHtml += `<span>${item.year}</span>`;
     if (item.duration) metaHtml += `<span>${formatDuration(item.duration)}</span>`;
-    if (item.age_rating) metaHtml += `<span class="age-badge">${escapeHtml(item.age_rating)}</span>`;
+    if (item.age_rating) metaHtml += `<span class="age-rating-badge">${escapeHtml(item.age_rating)}</span>`;
     heroMeta.innerHTML = metaHtml;
     
     // Button handler
