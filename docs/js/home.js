@@ -25,14 +25,34 @@ async function loadContent() {
 
 // Category filter functions
 function getRecentlyAdded(items, limit = 20) {
-    return items
+    const seenSeries = new Set();
+    const results = [];
+    
+    // Sort all items by publication date first
+    const sortedItems = items
         .filter(item => item.publication_date && item.thumbnail)
         .sort((a, b) => {
             const dateA = new Date(a.publication_date);
             const dateB = new Date(b.publication_date);
             return dateB - dateA;
-        })
-        .slice(0, limit);
+        });
+    
+    // Filter out duplicate series episodes
+    for (const item of sortedItems) {
+        if (results.length >= limit) break;
+        
+        // If it's an episode, check if we've already added an episode from this series
+        if (item.series_slug) {
+            if (seenSeries.has(item.series_slug)) {
+                continue; // Skip this episode, we already have one from this series
+            }
+            seenSeries.add(item.series_slug);
+        }
+        
+        results.push(item);
+    }
+    
+    return results;
 }
 
 function getSoonUnavailable(items, limit = 20) {
