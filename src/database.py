@@ -26,6 +26,7 @@ class ContentDatabase:
         self._create_tables()
         self._migrate_add_platform()
         self._migrate_add_dates()
+        self._migrate_add_season_normalized()
     
     def _create_tables(self):
         """Create database tables if they don't exist"""
@@ -46,6 +47,7 @@ class ContentDatabase:
                 series_slug TEXT,  -- For episodes, the parent series slug
                 series_title TEXT,  -- For episodes, the parent series title
                 season_number INTEGER,  -- For episodes
+                season_number_normalized INTEGER,  -- For episodes, normalized season number (1, 2, 3...)
                 episode_number INTEGER,  -- For episodes
                 is_geo_restricted BOOLEAN,
                 restriction_type TEXT,  -- 'manifest_403', 'manifest_404', etc.
@@ -82,6 +84,8 @@ class ContentDatabase:
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_content_series_slug ON content(series_slug)
         """)
+        # Note: idx_content_season_normalized is created in _migrate_add_season_normalized()
+        # to avoid issues with existing databases that don't have the column yet
         # Note: Platform index on JSON array is less efficient, but we can still create it
         # Queries will use json_each() for filtering
         cursor.execute("""
@@ -290,6 +294,103 @@ class ContentDatabase:
         self.conn.commit()
         print(f"  ✓ Updated {updated_count} records with date information")
     
+    def _migrate_add_season_normalized(self):
+        """
+        Migrate database to add season_number_normalized column.
+        Populates normalized season numbers per series.
+        """
+        cursor = self.conn.cursor()
+        
+        # Check if column exists
+        cursor.execute("PRAGMA table_info(content)")
+        columns = [row[1] for row in cursor.fetchall()]
+        
+        if 'season_number_normalized' not in columns:
+            print("Migrating database: Adding season_number_normalized column...")
+            
+            # Add column
+            cursor.execute("ALTER TABLE content ADD COLUMN season_number_normalized INTEGER")
+            
+            # Populate existing data
+            self._populate_season_normalized()
+            
+            # Create index
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_content_season_normalized ON content(season_number_normalized)
+            """)
+            
+            print("  ✓ Migration complete: Added season_number_normalized")
+        
+        self.conn.commit()
+    
+    def _populate_season_normalized(self):
+        """Populate season_number_normalized for all existing episodes"""
+        cursor = self.conn.cursor()
+        
+        # Get all series
+        cursor.execute("""
+            SELECT DISTINCT series_slug 
+            FROM content 
+            WHERE series_slug IS NOT NULL AND series_slug != ''
+        """)
+        series_list = [row[0] for row in cursor.fetchall()]
+        
+        updated_count = 0
+        for series_slug in series_list:
+            # Get unique season numbers for this series, ordered
+            cursor.execute("""
+                SELECT DISTINCT season_number 
+                FROM content 
+                WHERE series_slug = ? AND season_number IS NOT NULL 
+                ORDER BY season_number
+            """, (series_slug,))
+            
+            season_numbers = [row[0] for row in cursor.fetchall()]
+            
+            # Create mapping: raw season number -> normalized (1, 2, 3...)
+            for idx, season_num in enumerate(season_numbers, start=1):
+                cursor.execute("""
+                    UPDATE content 
+                    SET season_number_normalized = ? 
+                    WHERE series_slug = ? AND season_number = ?
+                """, (idx, series_slug, season_num))
+                updated_count += cursor.rowcount
+        
+        self.conn.commit()
+        print(f"  ✓ Normalized season numbers for {len(series_list)} series ({updated_count} episodes)")
+    
+    def _calculate_season_normalized(self, series_slug: str, season_number: int) -> Optional[int]:
+        """
+        Calculate normalized season number for a given series and season
+        
+        Args:
+            series_slug: Series slug
+            season_number: Raw season number from API
+            
+        Returns:
+            Normalized season number (1, 2, 3...) or None
+        """
+        if not series_slug or season_number is None:
+            return None
+        
+        # Get all season numbers for this series, ordered
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT DISTINCT season_number 
+            FROM content 
+            WHERE series_slug = ? AND season_number IS NOT NULL 
+            ORDER BY season_number
+        """, (series_slug,))
+        
+        season_numbers = [row[0] for row in cursor.fetchall()]
+        
+        # Find position in sorted list (1-indexed)
+        if season_number in season_numbers:
+            return season_numbers.index(season_number) + 1
+        else:
+            # New season number - append to end
+            return len(season_numbers) + 1
+    
     def upsert_content(self, content_data: Dict[str, Any]) -> int:
         """
         Insert or update content record
@@ -315,6 +416,9 @@ class ContentDatabase:
         series_slug = content_data.get('series_slug')
         series_title = content_data.get('series_title')
         season_number = content_data.get('season_number')
+        season_number_normalized = None
+        if series_slug and season_number is not None:
+            season_number_normalized = self._calculate_season_normalized(series_slug, season_number)
         episode_number = content_data.get('episode_number')
         is_geo_restricted = content_data.get('is_geo_restricted')
         restriction_type = content_data.get('restriction_type')
@@ -415,11 +519,11 @@ class ContentDatabase:
         cursor.execute("""
             INSERT INTO content (
                 slug, platform, title, type, duration, year, genres,
-                series_slug, series_title, season_number, episode_number,
+                series_slug, series_title, season_number, season_number_normalized, episode_number,
                 is_geo_restricted, restriction_type, last_checked, metadata,
                 available_until, publication_date
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(slug) DO UPDATE SET
                 platform = excluded.platform,
                 title = COALESCE(excluded.title, title),
@@ -430,6 +534,7 @@ class ContentDatabase:
                 series_slug = COALESCE(excluded.series_slug, series_slug),
                 series_title = COALESCE(excluded.series_title, series_title),
                 season_number = COALESCE(excluded.season_number, season_number),
+                season_number_normalized = COALESCE(excluded.season_number_normalized, season_number_normalized),
                 episode_number = COALESCE(excluded.episode_number, episode_number),
                 is_geo_restricted = excluded.is_geo_restricted,
                 restriction_type = excluded.restriction_type,
@@ -440,7 +545,7 @@ class ContentDatabase:
                 updated_at = CURRENT_TIMESTAMP
         """, (
             slug, platform_json, title, content_type, duration, year, genres,
-            series_slug, series_title, season_number, episode_number,
+            series_slug, series_title, season_number, season_number_normalized, episode_number,
             is_geo_restricted, restriction_type, last_checked, metadata_json,
             available_until, publication_date
         ))
