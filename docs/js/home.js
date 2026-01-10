@@ -43,7 +43,11 @@ function getSoonUnavailable(items, limit = 20) {
         .filter(item => {
             if (!item.available_until || !item.thumbnail) return false;
             const expiryDate = new Date(item.available_until);
-            return expiryDate >= today && expiryDate <= sixtyDaysFromNow;
+            const isExpiringSoon = expiryDate >= today && expiryDate <= sixtyDaysFromNow;
+            // Only include VOD/movie content, not episodes or series
+            const isVod = item.type === 'vod' || item.type === 'movie';
+            const notEpisode = !item.series_slug;
+            return isExpiringSoon && isVod && notEpisode;
         })
         .sort((a, b) => {
             return new Date(a.available_until) - new Date(b.available_until);
