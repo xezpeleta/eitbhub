@@ -1,15 +1,16 @@
 {
-  "export_date": "2026-01-10T16:42:21.177266",
+  "export_date": "2026-01-12T21:23:41.400648",
   "statistics": {
-    "total_content": 18366,
+    "total_content": 18426,
     "by_type": {
-      "episode": 17486,
+      "episode": 17541,
       "live": 5,
-      "series": 376,
-      "vod": 499
+      "series": 377,
+      "unknown": 3,
+      "vod": 500
     },
     "by_platform": {
-      "etbon.eus": 6971,
+      "etbon.eus": 7031,
       "makusi.eus": 6201,
       "primeran.eus": 6461
     },
@@ -30,7 +31,7 @@
       "1981": 74,
       "1982": 1,
       "1983": 6,
-      "1984": 5,
+      "1984": 4,
       "1985": 4,
       "1986": 46,
       "1987": 52,
@@ -69,28 +70,28 @@
       "2020": 407,
       "2021": 494,
       "2022": 752,
-      "2023": 1129,
+      "2023": 1130,
       "2024": 2442,
-      "2025": 2028,
-      "2026": 12
+      "2025": 2049,
+      "2026": 14
     },
     "by_age_rating": {
-      "D": 10453,
+      "D": 10441,
       "0-4": 2456,
-      "5-7": 1817,
-      "+12": 1093,
-      "+8": 819,
-      "+7": 783,
-      "TP": 467,
-      "+16": 276,
-      "Unknown": 113,
-      "+18": 87,
+      "5-7": 1819,
+      "+12": 1089,
+      "+8": 843,
+      "+7": 768,
+      "TP": 468,
+      "+16": 275,
+      "Unknown": 181,
+      "+18": 84,
       "Kalifikatu gabe": 1,
       "H": 1
     },
     "by_language": {
-      "eu": 13741,
-      "es": 4271,
+      "eu": 13752,
+      "es": 4281,
       "vo": 845,
       "en": 83,
       "au": 65,
@@ -99,8 +100,8 @@
     },
     "geo_restricted_by_platform": {
       "etbon.eus": {
-        "restricted": 190,
-        "accessible": 6667
+        "restricted": 226,
+        "accessible": 6691
       },
       "makusi.eus": {
         "restricted": 4443,
@@ -111,10 +112,10 @@
         "accessible": 4797
       }
     },
-    "geo_restricted_count": 5277,
-    "accessible_count": 12711,
+    "geo_restricted_count": 5313,
+    "accessible_count": 12735,
     "unknown_count": 378,
-    "geo_restricted_percentage": 28.732440378961122,
-    "last_check": "2026-01-10T13:25:58.535391"
+    "geo_restricted_percentage": 28.83425594268968,
+    "last_check": "2026-01-12T21:10:40.221102"
   }
 }
