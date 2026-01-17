@@ -256,7 +256,8 @@ class MakusiAPI:
                     'series_slug': series_slug,
                     'series_title': series_data.get('title'),
                     'season_number': season_number,
-                    'type': 'episode'
+                    'type': 'episode',
+                    'published_on': episode.get('published_on')
                 }
                 
                 # Include images if available in the episode data

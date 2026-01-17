@@ -725,6 +725,10 @@ class ContentScraper:
                         metadata = episode_metadata.copy() if isinstance(episode_metadata, dict) else {}
                         metadata = self._add_platform_url_to_metadata(metadata, episode_slug, 'episode', series_slug)
                         
+                        # Preserve published_on from episode list if not in full metadata
+                        if 'published_on' in episode and 'published_on' not in metadata:
+                            metadata['published_on'] = episode['published_on']
+                        
                         # Ensure media_type is in metadata
                         if episode_media_type:
                             metadata['media_type'] = episode_media_type
@@ -776,6 +780,10 @@ class ContentScraper:
                             metadata['error'] = error_msg
                             metadata['api_restricted'] = True
                             metadata = self._add_platform_url_to_metadata(metadata, episode_slug, 'episode', series_slug)
+                            
+                            # Preserve published_on from episode list if not in full metadata
+                            if 'published_on' in episode and 'published_on' not in metadata:
+                                metadata['published_on'] = episode['published_on']
                             
                             content_data = {
                                 'slug': episode_slug,
@@ -838,6 +846,10 @@ class ContentScraper:
                             # Add platform URL to metadata
                             metadata = episode_metadata.copy() if isinstance(episode_metadata, dict) else {}
                             metadata = self._add_platform_url_to_metadata(metadata, episode_slug, 'episode', series_slug)
+                            
+                            # Preserve published_on from episode list if not in full metadata
+                            if 'published_on' in episode and 'published_on' not in metadata:
+                                metadata['published_on'] = episode['published_on']
                             
                             # Ensure media_type is in metadata
                             if episode_media_type:

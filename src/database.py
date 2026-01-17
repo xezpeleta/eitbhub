@@ -269,8 +269,8 @@ class ContentDatabase:
                 # Extract available_until
                 available_until = metadata.get('available_until')
                 
-                # Extract publication_date - prefer content date_created, fallback to oldest image
-                publication_date = metadata.get('date_created')
+                # Extract publication_date - prefer published_on, then date_created, fallback to oldest image
+                publication_date = metadata.get('published_on') or metadata.get('date_created')
                 if not publication_date:
                     images = metadata.get('images', [])
                     if images:
@@ -430,7 +430,8 @@ class ContentDatabase:
         publication_date = None
         if isinstance(metadata, dict):
             available_until = metadata.get('available_until')
-            publication_date = metadata.get('date_created')
+            # Try published_on first (from series endpoint), then date_created (from media endpoint)
+            publication_date = metadata.get('published_on') or metadata.get('date_created')
             
             # Fallback to oldest image date if no date_created
             if not publication_date:
